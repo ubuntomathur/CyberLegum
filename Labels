@@ -1,0 +1,15 @@
+
+What is Label
+
+It is key value pair , it is attached to primitive objects of kubernetes such as
+pod
+service
+node
+application: prod
+key:value 
+1.kubectl label pod <pod-name> <label-key>=<label-value>
+2.kubectl label pod mypod environment=production
+3.kubectl label pod mypod environment=production app=nginx
+This command will add two labels to the pod mypod: environment=production and app=nginx.
+4.kubectl describe pod mypod
+5.kubectl get pod mypod --show-labels
