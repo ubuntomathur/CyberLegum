@@ -1,0 +1,179 @@
+To deploy a Virtual Machine (VM) as a pod in Kubernetes using KubeVirt, follow these steps:
+[root@master ~]# kubectl get nodes
+NAME                  STATUS   ROLES           AGE    VERSION
+master.example.com    Ready    control-plane   2d2h   v1.31.2
+worker1.example.com   Ready    <none>          2d1h   v1.31.2
+worker2.example.com   Ready    <none>          2d1h   v1.31.2
+
+
+[root@master ~]# kubectl get pods -A
+NAMESPACE     NAME                                         READY   STATUS    RESTARTS       AGE
+cdi           cdi-apiserver-6bdf46b899-wvb8j               1/1     Running   8 (159m ago)   2d1h
+cdi           cdi-deployment-7756f757bb-j6vnf              1/1     Running   8 (159m ago)   2d1h
+cdi           cdi-operator-775d9b45d-gqrsg                 1/1     Running   7 (158m ago)   2d1h
+cdi           cdi-uploadproxy-56bf8845cf-78gpr             1/1     Running   4 (161m ago)   2d1h
+default       nfs-client-provisioner-75fc74788b-kklc6      1/1     Running   4 (159m ago)   29h
+kube-system   calico-kube-controllers-b8d8894fb-ft2vz      1/1     Running   4 (161m ago)   2d1h
+kube-system   calico-node-m4r8s                            1/1     Running   4 (161m ago)   2d1h
+kube-system   calico-node-msqzw                            1/1     Running   4 (161m ago)   2d1h
+kube-system   calico-node-tpf8w                            1/1     Running   4 (161m ago)   2d1h
+kube-system   coredns-7c65d6cfc9-jtdrg                     1/1     Running   4 (161m ago)   2d2h
+kube-system   coredns-7c65d6cfc9-vbjnv                     1/1     Running   4 (161m ago)   2d2h
+kube-system   etcd-master.example.com                      1/1     Running   4 (161m ago)   2d2h
+kube-system   kube-apiserver-master.example.com            1/1     Running   4 (161m ago)   2d2h
+kube-system   kube-controller-manager-master.example.com   1/1     Running   4 (161m ago)   2d2h
+kube-system   kube-proxy-68dss                             1/1     Running   4 (161m ago)   2d1h
+kube-system   kube-proxy-srcb5                             1/1     Running   4 (161m ago)   2d1h
+kube-system   kube-proxy-wjqpr                             1/1     Running   4 (161m ago)   2d2h
+kube-system   kube-scheduler-master.example.com            1/1     Running   4 (161m ago)   2d2h
+kubevirt      virt-api-8fcf7f45b-7qqhg                     1/1     Running   5 (161m ago)   2d1h
+kubevirt      virt-api-8fcf7f45b-n44v6                     1/1     Running   5 (161m ago)   2d1h
+kubevirt      virt-controller-54ffc5877b-6bfvm             1/1     Running   5 (161m ago)   2d1h
+kubevirt      virt-controller-54ffc5877b-tgv4d             1/1     Running   5 (161m ago)   2d1h
+kubevirt      virt-handler-d9pdj                           1/1     Running   4 (161m ago)   2d1h
+kubevirt      virt-handler-g9dmz                           1/1     Running   4 (161m ago)   2d1h
+kubevirt      virt-operator-656d6cf6d7-lmsz7               1/1     Running   7 (159m ago)   2d1h
+kubevirt      virt-operator-656d6cf6d7-pprjd               1/1     Running   7 (159m ago)   2d1h
+
+
+ [root@master ~]# showmount -e
+Export list for master.example.com:
+/shares/registry *
+[root@master ~]# cat /etc/exportfs
+cat: /etc/exportfs: No such file or directory
+[root@master ~]# cat /etc/exports
+/shares/registry  *(rw,sync,no_root_squash,no_subtree_check,no_wdelay)
+[root@master ~]# cd /var/www/html/
+[root@master html]# ls
+rhel9-mariadb.qcow2
+[root@master html]# kubectl get service -n cdi
+NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+cdi-api                  ClusterIP   10.96.49.104    <none>        443/TCP    2d1h
+cdi-prometheus-metrics   ClusterIP   10.105.39.208   <none>        8080/TCP   2d1h
+cdi-uploadproxy          ClusterIP   10.104.57.165   <none>        443/TCP    2d1h
+[root@master html]# virtctl image-upload dv fedora-dv --size=30Gi --image-path=/var/www/html/rhel9-mariadb.qcow2 --insecure  --uploadproxy-url=https://                                                        10.104.57.165:443
+PVC default/fedora-dv not found
+DataVolume default/fedora-dv created
+Waiting for PVC fedora-dv upload pod to be ready...
+Pod now ready
+Uploading data to https://10.104.57.165:443
+
+ 956.69 MiB / 956.69 MiB [================================================================================================================] 100.00% 24s
+
+Uploading data completed successfully, waiting for processing to complete, you can hit ctrl-c without interrupting the progress
+Processing completed successfully
+Uploading /var/www/html/rhel9-mariadb.qcow2 completed successfully
+[root@master html]# kubectl get dv
+NAME        PHASE       PROGRESS   RESTARTS   AGE
+fedora-dv   Succeeded   N/A                   90s
+[root@master html]# kubectl get pvc
+NAME        STATUS   VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+fedora-dv   Bound    pvc-c34d2d4e-9bfc-4cfe-88d6-6574636a98e9   34087042032   RWX            nfs-client     <unset>                 95s
+[root@master html]# cd ~
+[root@master ~]# cat test.yml
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: dev-dbaccess
+spec:
+  runStrategy: RerunOnFailure
+  template:
+    metadata:
+      labels:
+        app: dev-dbaccess
+        color: red
+    spec:
+      architecture: amd64
+      domain:
+        cpu:
+          cores: 1
+          sockets: 1
+          threads: 1
+        devices:
+          disks:
+          - name: dev-dbaccess
+            bootOrder: 1
+            disk:
+              bus: virtio
+          - name: cloudinitdisk
+            disk:
+              bus: virtio
+          interfaces:
+          - name: default
+            masquerade: {}
+        machine:
+          type: pc-q35-rhel8.4.0
+        resources:
+          requests:
+            memory: 2Gi
+      evictionStrategy: LiveMigrate
+      hostname: dev-dbaccess
+      networks:
+      - name: default
+        pod: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - name: dev-dbaccess
+        dataVolume:
+          name: fedora-dv
+      - name: cloudinitdisk
+        cloudInitNoCloud:
+          userData: |-
+            #cloud-config
+            user: developer
+            password: developer
+            chpasswd: { expire: False } 
+[root@master ~]# kubectl create -f test.yml
+virtualmachine.kubevirt.io/dev-dbaccess created
+[root@master ~]# kubectl get pods
+NAME                                      READY   STATUS    RESTARTS       AGE
+nfs-client-provisioner-75fc74788b-kklc6   1/1     Running   4 (162m ago)   29h
+virt-launcher-dev-dbaccess-2klbq          2/2     Running   0              5s
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS    READY
+dev-dbaccess   8s    Running   True
+[root@master ~]# kubectl get vmi
+NAME           AGE   PHASE     IP               NODENAME              READY
+dev-dbaccess   12s   Running   172.16.102.135   worker1.example.com   True
+[root@master ~]# virctl console dev-dbaccess
+-bash: virctl: command not found
+[root@master ~]# virtctl console dev-dbaccess
+Successfully connected to dev-dbaccess console. The escape sequence is ^]
+
+dev-dbaccess login: developer
+Password:
+[developer@dev-dbaccess ~]$ sudo -i
+[root@dev-dbaccess ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+search default.svc.cluster.local svc.cluster.local cluster.local example.com
+nameserver 10.96.0.10
+[root@dev-dbaccess ~]# cat /etc/redhat-release
+Red Hat Enterprise Linux release 9.3 (Plow)
+[root@dev-dbaccess ~]# systemctl status mariadb
+● mariadb.service - MariaDB 10.5 database server
+     Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; preset: >
+     Active: active (running) since Sun 2024-10-27 05:22:16 EDT; 1min 21s ago
+       Docs: man:mariadbd(8)
+             https://mariadb.com/kb/en/library/systemd/
+    Process: 758 ExecStartPre=/usr/libexec/mariadb-check-socket (code=exited, s>
+    Process: 808 ExecStartPre=/usr/libexec/mariadb-prepare-db-dir mariadb.servi>
+    Process: 1169 ExecStartPost=/usr/libexec/mariadb-check-upgrade (code=exited>
+   Main PID: 868 (mariadbd)
+     Status: "Taking your SQL requests now..."
+      Tasks: 9 (limit: 10866)
+     Memory: 118.6M
+        CPU: 401ms
+     CGroup: /system.slice/mariadb.service
+             └─868 /usr/libexec/mariadbd --basedir=/usr
+
+Oct 27 05:22:14 dev-dbaccess systemd[1]: Starting MariaDB 10.5 database server.>
+Oct 27 05:22:14 dev-dbaccess mariadb-prepare-db-dir[808]: Database MariaDB is p>
+Oct 27 05:22:14 dev-dbaccess mariadb-prepare-db-dir[808]: If this is not the ca>
+Oct 27 05:22:16 dev-dbaccess systemd[1]: Started MariaDB 10.5 database server. 
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS    READY
+dev-dbaccess   12m   Running   True
+[root@master ~]# kubectl get vmi
+NAME           AGE   PHASE     IP               NODENAME              READY
+dev-dbaccess   12m   Running   172.16.102.135   worker1.example.com   True
+[root@master ~]# 
