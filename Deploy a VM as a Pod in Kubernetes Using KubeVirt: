@@ -1,3 +1,14 @@
+Steps to Deploy a VM as a Pod in Kubernetes Using KubeVirt:
+- Install KubeVirt on Kubernetes
+- Verify KubeVirt Installation
+- Create a DataVolume for VM Disk
+- Define the VirtualMachine YAML Configuration
+- Deploy the VM
+- Verify VM Creation
+- Access the VM Console hashtag#kubernetes hashtag#KubeVirt hashtag#CNCF hashtag#Telco
+
+
+
 To deploy a Virtual Machine (VM) as a pod in Kubernetes using KubeVirt, follow these steps:
 [root@master ~]# kubectl get nodes
 NAME                  STATUS   ROLES           AGE    VERSION
