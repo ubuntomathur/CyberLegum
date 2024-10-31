@@ -1,0 +1,371 @@
+Step-1 Master Node Installation Procedure/Control Plane Node v1.31.1
+[root@master ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+192.168.29.191  master.example.com    master
+192.168.29.192 worker-01.example.com  worker-01
+192.168.29.193 worker-02.example.com  worker-02
+[root@master ~]#
+[root@master ~]# sudo dnf install kernel-devel-$(uname -r)
+
+[root@master ~]# sudo modprobe br_netfilter
+sudo modprobe ip_vs
+sudo modprobe ip_vs_rr
+sudo modprobe ip_vs_wrr
+sudo modprobe ip_vs_sh
+sudo modprobe overlay
+
+[root@master ~]# cat > /etc/modules-load.d/kubernetes.conf << EOF
+br_netfilter
+ip_vs
+ip_vs_rr
+ip_vs_wrr
+ip_vs_sh
+overlay
+EOF
+[root@master ~]# cat > /etc/sysctl.d/kubernetes.conf << EOF
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+[root@master ~]# sysctl --system
+[root@master ~]# #vi /etc/fstab
+[root@master ~]# vi /etc/fstab
+[root@master ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Mon Oct 14 10:37:04 2024
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+#
+# After editing this file, run 'systemctl daemon-reload' to update systemd
+# units generated from this file.
+#
+/dev/mapper/rhel-root   /                       xfs     defaults        0 0
+UUID=9537bff3-0db5-4611-a8cc-88842e689066 /boot                   xfs     defaults        0 0
+/dev/mapper/rhel-home   /home                   xfs     defaults        0 0
+#/dev/mapper/rhel-swap   none                    swap    defaults        0 0
+[root@master ~]#
+[root@master ~]# #systemctl stop firewalld
+[root@master ~]# #systemctl disable firewalld
+[root@master ~]#
+[root@master ~]# vi /etc/sysconfig/selinux | make it disabled
+
+
+
+ [root@master ~]# sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+root@master ~]# sudo dnf makecache
+
+[root@master ~]# sudo dnf -y install containerd.io
+
+[root@master ~]# cat /etc/containerd/config.toml
+[root@master ~]# sudo sh -c "containerd config default > /etc/containerd/config.toml" ; cat /etc/containerd/config.toml
+[root@master ~]# sudo vim /etc/containerd/config.toml and change SystemdCgroup = true
+[root@master ~]# sudo systemctl enable --now containerd.service
+[root@master ~]# sudo systemctl reboot
+[root@master ~]# sudo systemctl status containerd.service
+● containerd.service - containerd container runtime
+     Loaded: loaded (/usr/lib/systemd/system/containerd.service; enabled; preset: disabled)
+     Active: active (running) since Mon 2024-10-14 20:17:49 IST; 1h 26min ago
+       Docs: https://containerd.io
+   Main PID: 888 (containerd)
+      Tasks: 132
+     Memory: 710.1M
+        CPU: 2min 17.893s
+     CGroup: /system.slice/containerd.service
+             ├─ 888 /usr/bin/containerd
+             ├─1519 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id 61e29c896043c4f4b7dc76885b340d55fc8af660109d6f3cf90d602321c>
+             ├─1520 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id f2a28e4f87cd57b1f6557ad31ec131f8e910c71d4f4006c11a7001f27b3>
+             ├─1535 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id 99d15830983e36d50672f98e41a679e6072bd776f8c859ab5e0d505123b>
+  
+[root@master ~]# cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+[root@master ~]# sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+[root@master ~]# systemctl enable --now kubelet.service
+[root@master ~]# sudo kubeadm config images pull
+
+[root@master ~]# kubeadm init
+[root@master ~]# mkdir -p $HOME/.kube
+[root@master ~]#sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+[root@master ~]#sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+
+[root@master ~]# curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml -O
+[root@master ~]# kubectl apply -f calico.yaml
+
+[root@master ~]# kubectl get nodes
+NAME                    STATUS   ROLES           AGE   VERSION
+master.example.com      Ready    control-plane   91m   v1.31.1
+
+Step2 :Worker Node 
+
+[root@worker-01 ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+192.168.29.191  worker-01.example.com    worker-01
+192.168.29.192 worker-01.example.com  worker-01
+192.168.29.193 worker-02.example.com  worker-02
+[root@worker-01 ~]#
+[root@worker-01 ~]# sudo dnf install kernel-devel-$(uname -r)
+
+[root@worker-01 ~]# sudo modprobe br_netfilter
+sudo modprobe ip_vs
+sudo modprobe ip_vs_rr
+sudo modprobe ip_vs_wrr
+sudo modprobe ip_vs_sh
+sudo modprobe overlay
+
+[root@worker-01 ~]# cat > /etc/modules-load.d/kubernetes.conf << EOF
+br_netfilter
+ip_vs
+ip_vs_rr
+ip_vs_wrr
+ip_vs_sh
+overlay
+EOF
+[root@worker-01 ~]# cat > /etc/sysctl.d/kubernetes.conf << EOF
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+[root@worker-01 ~]# sysctl --system
+[root@worker-01 ~]# #vi /etc/fstab
+[root@worker-01 ~]# vi /etc/fstab
+[root@worker-01 ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Mon Oct 14 10:37:04 2024
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+#
+# After editing this file, run 'systemctl daemon-reload' to update systemd
+# units generated from this file.
+#
+/dev/mapper/rhel-root   /                       xfs     defaults        0 0
+UUID=9537bff3-0db5-4611-a8cc-88842e689066 /boot                   xfs     defaults        0 0
+/dev/mapper/rhel-home   /home                   xfs     defaults        0 0
+#/dev/mapper/rhel-swap   none                    swap    defaults        0 0
+[root@worker-01 ~]#
+[root@worker-01 ~]# #systemctl stop firewalld
+[root@worker-01 ~]# #systemctl disable firewalld
+[root@worker-01 ~]#
+[root@worker-01 ~]# vi /etc/sysconfig/selinux | make it disabled
+
+
+
+ [root@worker-01 ~]# sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+root@worker-01 ~]# sudo dnf makecache
+
+[root@worker-01 ~]# sudo dnf -y install containerd.io
+
+[root@worker-01 ~]# cat /etc/containerd/config.toml
+[root@worker-01 ~]# sudo sh -c "containerd config default > /etc/containerd/config.toml" ; cat /etc/containerd/config.toml
+[root@worker-01 ~]# sudo vim /etc/containerd/config.toml and change SystemdCgroup = true
+[root@worker-01 ~]# sudo systemctl enable --now containerd.service
+[root@worker-01 ~]# sudo systemctl reboot
+[root@worker-01 ~]# sudo systemctl status containerd.service
+● containerd.service - containerd container runtime
+     Loaded: loaded (/usr/lib/systemd/system/containerd.service; enabled; preset: disabled)
+     Active: active (running) since Mon 2024-10-14 20:17:49 IST; 1h 26min ago
+       Docs: https://containerd.io
+   Main PID: 888 (containerd)
+      Tasks: 132
+     Memory: 710.1M
+        CPU: 2min 17.893s
+     CGroup: /system.slice/containerd.service
+             ├─ 888 /usr/bin/containerd
+             ├─1519 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id 61e29c896043c4f4b7dc76885b340d55fc8af660109d6f3cf90d602321c>
+             ├─1520 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id f2a28e4f87cd57b1f6557ad31ec131f8e910c71d4f4006c11a7001f27b3>
+             ├─1535 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id 99d15830983e36d50672f98e41a679e6072bd776f8c859ab5e0d505123b>
+  
+[root@worker-01 ~]# cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+
+[root@worker-01 ~]# sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+[root@worker-01 ~]# systemctl enable --now kubelet.service 
+
+root@worker-01 ~]# systemctl enable --now kubelet.service
+Created symlink /etc/systemd/system/multi-user.target.wants/kubelet.service → /usr/lib/systemd/system/kubelet.service.
+[root@worker-01 ~]# kubeadm join 192.168.29.191:6443 --token wfob9x.nb38lqpfwv84qgj1 \
+        --discovery-token-ca-cert-hash sha256:e16b9527c30cda8ff5eaee266c264cc67b449739adb03a4c476ea16cd1031f21
+[preflight] Running pre-flight checks
+        [WARNING FileExisting-socat]: socat not found in system path
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Starting the kubelet
+[kubelet-check] Waiting for a healthy kubelet at http://127.0.0.1:10248/healthz. This can take up to 4m0s
+[kubelet-check] The kubelet is healthy after 504.45595ms
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap
+
+This node has joined the cluster:
+* Certificate signing request was sent to apiserver and a response was received.
+* The Kubelet was informed of the new secure connection details.
+
+Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
+
+Step3:// Worker Node Join 
+
+[root@worker-02 ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+192.168.29.191  worker-02.example.com    worker-02
+192.168.29.192 worker-02.example.com  worker-02
+192.168.29.193 worker-02.example.com  worker-02
+[root@worker-02 ~]#
+[root@worker-02 ~]# sudo dnf install kernel-devel-$(uname -r)
+
+[root@worker-02 ~]# sudo modprobe br_netfilter
+sudo modprobe ip_vs
+sudo modprobe ip_vs_rr
+sudo modprobe ip_vs_wrr
+sudo modprobe ip_vs_sh
+sudo modprobe overlay
+
+[root@worker-02 ~]# cat > /etc/modules-load.d/kubernetes.conf << EOF
+br_netfilter
+ip_vs
+ip_vs_rr
+ip_vs_wrr
+ip_vs_sh
+overlay
+EOF
+[root@worker-02 ~]# cat > /etc/sysctl.d/kubernetes.conf << EOF
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+[root@worker-02 ~]# sysctl --system
+[root@worker-02 ~]# #vi /etc/fstab
+[root@worker-02 ~]# vi /etc/fstab
+[root@worker-02 ~]# cat /etc/fstab
+
+#
+# /etc/fstab
+# Created by anaconda on Mon Oct 14 10:37:04 2024
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+#
+# After editing this file, run 'systemctl daemon-reload' to update systemd
+# units generated from this file.
+#
+/dev/mapper/rhel-root   /                       xfs     defaults        0 0
+UUID=9537bff3-0db5-4611-a8cc-88842e689066 /boot                   xfs     defaults        0 0
+/dev/mapper/rhel-home   /home                   xfs     defaults        0 0
+#/dev/mapper/rhel-swap   none                    swap    defaults        0 0
+[root@worker-02 ~]#
+[root@worker-02 ~]# #systemctl stop firewalld
+[root@worker-02 ~]# #systemctl disable firewalld
+[root@worker-02 ~]#
+[root@worker-02 ~]# vi /etc/sysconfig/selinux | make it disabled
+
+
+
+ [root@worker-02 ~]# sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+root@worker-02 ~]# sudo dnf makecache
+
+[root@worker-02 ~]# sudo dnf -y install containerd.io
+
+[root@worker-02 ~]# cat /etc/containerd/config.toml
+[root@worker-02 ~]# sudo sh -c "containerd config default > /etc/containerd/config.toml" ; cat /etc/containerd/config.toml
+[root@worker-02 ~]# sudo vim /etc/containerd/config.toml and change SystemdCgroup = true
+[root@worker-02 ~]# sudo systemctl enable --now containerd.service
+[root@worker-02 ~]# sudo systemctl reboot
+[root@worker-02 ~]# sudo systemctl status containerd.service
+● containerd.service - containerd container runtime
+     Loaded: loaded (/usr/lib/systemd/system/containerd.service; enabled; preset: disabled)
+     Active: active (running) since Mon 2024-10-14 20:17:49 IST; 1h 26min ago
+       Docs: https://containerd.io
+   Main PID: 888 (containerd)
+      Tasks: 132
+     Memory: 710.1M
+        CPU: 2min 17.893s
+     CGroup: /system.slice/containerd.service
+             ├─ 888 /usr/bin/containerd
+             ├─1519 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id 61e29c896043c4f4b7dc76885b340d55fc8af660109d6f3cf90d602321c>
+             ├─1520 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id f2a28e4f87cd57b1f6557ad31ec131f8e910c71d4f4006c11a7001f27b3>
+             ├─1535 /usr/bin/containerd-shim-runc-v2 -namespace k8s.io -id 99d15830983e36d50672f98e41a679e6072bd776f8c859ab5e0d505123b>
+  
+[root@worker-02 ~]# cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+
+[root@worker-02 ~]# sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+[root@worker-02 ~]# systemctl enable --now kubelet.service
+
+[root@worker-02 ~]# sudo systemctl enable --now kubelet
+Created symlink /etc/systemd/system/multi-user.target.wants/kubelet.service → /usr/lib/systemd/system/kubelet.service.
+[root@worker-02 ~]#  kubeadm join 192.168.29.191:6443 --token wfob9x.nb38lqpfwv84qgj1 \
+        --discovery-token-ca-cert-hash sha256:e16b9527c30cda8ff5eaee266c264cc67b449739adb03a4c476ea16cd1031f21
+[preflight] Running pre-flight checks
+        [WARNING FileExisting-socat]: socat not found in system path
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Starting the kubelet
+[kubelet-check] Waiting for a healthy kubelet at http://127.0.0.1:10248/healthz. This can take up to 4m0s
+[kubelet-check] The kubelet is healthy after 1.017442725s
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap
+
+This node has joined the cluster:
+* Certificate signing request was sent to apiserver and a response was received.
+* The Kubelet was informed of the new secure connection details.
+
+Run 'kubectl get nodes' on the control-plane to see this node join the cluster
+Cluster Node status 
+
+[root@master ~]# kubectl get nodes
+NAME                    STATUS   ROLES           AGE   VERSION
+master.example.com      Ready    control-plane   91m   v1.31.1
+worker-01.example.com   Ready    <none>          83m   v1.31.1
+worker-02.example.com   Ready    <none>          73m   v1.31.1
+[root@master ~]# kubectl get pods -A
+NAMESPACE     NAME                                         READY   STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-b8d8894fb-7hmfk      1/1     Running   0          96m
+kube-system   calico-node-86g7t                            1/1     Running   0          79m
+kube-system   calico-node-mdrtw                            1/1     Running   0          96m
+kube-system   calico-node-qz5st                            1/1     Running   0          88m
+kube-system   coredns-7c65d6cfc9-7vc82                     1/1     Running   0          96m
+kube-system   coredns-7c65d6cfc9-wwlmk                     1/1     Running   0          96m
+kube-system   etcd-master.example.com                      1/1     Running   0          96m
+kube-system   kube-apiserver-master.example.com            1/1     Running   0          96m
+kube-system   kube-controller-manager-master.example.com   1/1     Running   0          96m
+kube-system   kube-proxy-5ql22                             1/1     Running   0          96m
+kube-system   kube-proxy-79rpg                             1/1     Running   0          79m
+kube-system   kube-proxy-qzml9                             1/1     Running   0          88m
+kube-system   kube-scheduler-master.example.com            1/1     Running   0          96m
+[root@master ~]# 
