@@ -11,7 +11,7 @@ Whether you're a beginner in DevOps or a seasoned professional in telecom, **Cyb
 
 
 
-Visit the channel here: [Cyber Legum on YouTube]([https://www.youtube.com/channel/UCXXXXXX](https://www.youtube.com/@cyberlegum/videos)) 
+Visit the channel here: [Cyber Legum on YouTube](https://www.youtube.com/@cyberlegum/videos)
 
 
 
