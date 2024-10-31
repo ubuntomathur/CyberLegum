@@ -1,0 +1,680 @@
+[root@master ~]# kubectl get nodes
+NAME                  STATUS   ROLES           AGE     VERSION
+master.example.com    Ready    control-plane   18m     v1.31.2
+worker1.example.com   Ready    <none>          7m40s   v1.31.2
+worker2.example.com   Ready    <none>          30s     v1.31.2
+[root@master ~]# kubectl get nodes -o wide
+NAME                  STATUS   ROLES           AGE     VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE                              KERNEL-VERSION                                                                         CONTAINER-RUNTIME
+master.example.com    Ready    control-plane   18m     v1.31.2   192.168.29.186   <none>        Red Hat Enterprise Linux 9.4 (Plow)   5.14.0-427.40.1.e                                                        l9_4.x86_64   containerd://1.7.22
+worker1.example.com   Ready    <none>          7m47s   v1.31.2   192.168.29.187   <none>        Red Hat Enterprise Linux 9.4 (Plow)   5.14.0-427.40.1.e                                                        l9_4.x86_64   containerd://1.7.22
+worker2.example.com   Ready    <none>          37s     v1.31.2   192.168.29.188   <none>        Red Hat Enterprise Linux 9.4 (Plow)   5.14.0-427.40.1.e                                                        l9_4.x86_64   containerd://1.7.22
+[root@master ~]# curl -L https://github.com/projectcalico/calico/releases/download/v3.28.2/calicoctl-linux-amd64 -o calicoctl
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100 64.4M  100 64.4M    0     0  7995k      0  0:00:08  0:00:08 --:--:--  9.7M
+[root@master ~]# mv calicoctl /usr/bin/
+[root@master ~]# chmod u+x /usr/bin/calicoctl
+[root@master ~]# calicoctl get nodes
+NAME
+master.example.com
+worker1.example.com
+worker2.example.com
+
+[root@master ~]# calicoctl ipam show
++----------+---------------+-----------+------------+--------------+
+| GROUPING |     CIDR      | IPS TOTAL | IPS IN USE |   IPS FREE   |
++----------+---------------+-----------+------------+--------------+
+| IP Pool  | 172.16.0.0/16 |     65536 | 6 (0%)     | 65530 (100%) |
++----------+---------------+-----------+------------+--------------+
+[root@master ~]# calicoctl ipam show --show-blocks
++----------+-------------------+-----------+------------+--------------+
+| GROUPING |       CIDR        | IPS TOTAL | IPS IN USE |   IPS FREE   |
++----------+-------------------+-----------+------------+--------------+
+| IP Pool  | 172.16.0.0/16     |     65536 | 6 (0%)     | 65530 (100%) |
+| Block    | 172.16.102.128/26 |        64 | 1 (2%)     | 63 (98%)     |
+| Block    | 172.16.204.64/26  |        64 | 4 (6%)     | 60 (94%)     |
+| Block    | 172.16.71.192/26  |        64 | 1 (2%)     | 63 (98%)     |
++----------+-------------------+-----------+------------+--------------+
+[root@master ~]# calicoctl ipam show
++----------+---------------+-----------+------------+--------------+
+| GROUPING |     CIDR      | IPS TOTAL | IPS IN USE |   IPS FREE   |
++----------+---------------+-----------+------------+--------------+
+| IP Pool  | 172.16.0.0/16 |     65536 | 6 (0%)     | 65530 (100%) |
++----------+---------------+-----------+------------+--------------+
+[root@master ~]# calicoctl get nodes
+NAME
+master.example.com
+worker1.example.com
+worker2.example.com
+
+[root@master ~]# kubectl get nodes -o wide
+NAME                  STATUS   ROLES           AGE     VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE                              KERNEL-VERSION                 CONTAINER-RUNTIME
+master.example.com    Ready    control-plane   20m     v1.31.2   192.168.29.186   <none>        Red Hat Enterprise Linux 9.4 (Plow)   5.14.0-427.40.1.el9_4.x86_64   containerd://1.7.22
+worker1.example.com   Ready    <none>          9m46s   v1.31.2   192.168.29.187   <none>        Red Hat Enterprise Linux 9.4 (Plow)   5.14.0-427.40.1.el9_4.x86_64   containerd://1.7.22
+worker2.example.com   Ready    <none>          2m36s   v1.31.2   192.168.29.188   <none>        Red Hat Enterprise Linux 9.4 (Plow)   5.14.0-427.40.1.el9_4.x86_64   containerd://1.7.22
+[root@master ~]# export RELEASE=$(curl https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0     13      0 --:--:-- --:--:-- --:--:--    13
+[root@master ~]#  kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-operator.yaml
+namespace/kubevirt created
+customresourcedefinition.apiextensions.k8s.io/kubevirts.kubevirt.io created
+priorityclass.scheduling.k8s.io/kubevirt-cluster-critical created
+clusterrole.rbac.authorization.k8s.io/kubevirt.io:operator created
+serviceaccount/kubevirt-operator created
+role.rbac.authorization.k8s.io/kubevirt-operator created
+rolebinding.rbac.authorization.k8s.io/kubevirt-operator-rolebinding created
+clusterrole.rbac.authorization.k8s.io/kubevirt-operator created
+clusterrolebinding.rbac.authorization.k8s.io/kubevirt-operator created
+deployment.apps/virt-operator created
+[root@master ~]# kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-cr.yaml
+kubevirt.kubevirt.io/kubevirt created
+[root@master ~]#  kubectl -n kubevirt wait kv kubevirt --for condition=Available
+error: timed out waiting for the condition on kubevirts/kubevirt
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          2m4s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          2m4s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          79s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          79s
+virt-handler-d9pdj                 0/1     PodInitializing   0          79s
+virt-handler-g9dmz                 0/1     PodInitializing   0          79s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          3m12s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          3m12s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          2m9s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          2m9s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          84s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          84s
+virt-handler-d9pdj                 0/1     PodInitializing   0          84s
+virt-handler-g9dmz                 0/1     PodInitializing   0          84s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          3m17s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          3m17s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          2m11s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          2m11s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          86s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          86s
+virt-handler-d9pdj                 0/1     PodInitializing   0          86s
+virt-handler-g9dmz                 0/1     PodInitializing   0          86s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          3m19s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          3m19s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          2m13s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          2m13s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          88s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          88s
+virt-handler-d9pdj                 0/1     PodInitializing   0          88s
+virt-handler-g9dmz                 0/1     PodInitializing   0          88s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          3m21s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          3m21s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          2m52s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          2m52s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m7s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m7s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m7s
+virt-handler-g9dmz                 0/1     PodInitializing   0          2m7s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          2m53s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          2m53s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m8s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m8s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m8s
+virt-handler-g9dmz                 0/1     PodInitializing   0          2m8s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m1s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m1s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          2m55s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          2m55s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m10s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m10s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m10s
+virt-handler-g9dmz                 0/1     PodInitializing   0          2m10s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m3s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m3s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m3s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m3s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m18s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m18s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m18s
+virt-handler-g9dmz                 0/1     Running           0          2m18s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m11s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m11s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m5s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m5s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m20s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m20s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m20s
+virt-handler-g9dmz                 0/1     Running           0          2m20s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m13s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m13s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m7s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m7s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m22s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m22s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m22s
+virt-handler-g9dmz                 0/1     Running           0          2m22s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m15s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m15s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m8s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m8s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m23s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m23s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m23s
+virt-handler-g9dmz                 0/1     Running           0          2m23s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m16s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m16s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m10s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m10s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m25s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m25s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m25s
+virt-handler-g9dmz                 0/1     Running           0          2m25s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m18s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m18s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m11s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m11s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m26s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m26s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m26s
+virt-handler-g9dmz                 0/1     Running           0          2m26s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m19s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m19s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m12s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m12s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m27s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m27s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m27s
+virt-handler-g9dmz                 0/1     Running           0          2m27s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m20s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m20s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m13s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m13s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m28s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m28s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m28s
+virt-handler-g9dmz                 0/1     Running           0          2m28s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m21s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m21s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m15s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m15s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m30s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m30s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m30s
+virt-handler-g9dmz                 0/1     Running           0          2m30s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m23s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m23s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS            RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running           0          3m16s
+virt-api-8fcf7f45b-n44v6           1/1     Running           0          3m16s
+virt-controller-54ffc5877b-6bfvm   1/1     Running           0          2m31s
+virt-controller-54ffc5877b-tgv4d   1/1     Running           0          2m31s
+virt-handler-d9pdj                 0/1     PodInitializing   0          2m31s
+virt-handler-g9dmz                 0/1     Running           0          2m31s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running           0          4m24s
+virt-operator-656d6cf6d7-pprjd     1/1     Running           0          4m24s
+[root@master ~]# kubectl get pods -A
+NAMESPACE     NAME                                         READY   STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-b8d8894fb-ft2vz      1/1     Running   0          24m
+kube-system   calico-node-m4r8s                            1/1     Running   0          8m25s
+kube-system   calico-node-msqzw                            1/1     Running   0          24m
+kube-system   calico-node-tpf8w                            1/1     Running   0          15m
+kube-system   coredns-7c65d6cfc9-jtdrg                     1/1     Running   0          26m
+kube-system   coredns-7c65d6cfc9-vbjnv                     1/1     Running   0          26m
+kube-system   etcd-master.example.com                      1/1     Running   0          26m
+kube-system   kube-apiserver-master.example.com            1/1     Running   0          26m
+kube-system   kube-controller-manager-master.example.com   1/1     Running   0          26m
+kube-system   kube-proxy-68dss                             1/1     Running   0          15m
+kube-system   kube-proxy-srcb5                             1/1     Running   0          8m25s
+kube-system   kube-proxy-wjqpr                             1/1     Running   0          26m
+kube-system   kube-scheduler-master.example.com            1/1     Running   0          26m
+kubevirt      virt-api-8fcf7f45b-7qqhg                     1/1     Running   0          3m24s
+kubevirt      virt-api-8fcf7f45b-n44v6                     1/1     Running   0          3m24s
+kubevirt      virt-controller-54ffc5877b-6bfvm             1/1     Running   0          2m39s
+kubevirt      virt-controller-54ffc5877b-tgv4d             1/1     Running   0          2m39s
+kubevirt      virt-handler-d9pdj                           0/1     Running   0          2m39s
+kubevirt      virt-handler-g9dmz                           0/1     Running   0          2m39s
+kubevirt      virt-operator-656d6cf6d7-lmsz7               1/1     Running   0          4m32s
+kubevirt      virt-operator-656d6cf6d7-pprjd               1/1     Running   0          4m32s
+[root@master ~]# kubectl get pods -A
+NAMESPACE     NAME                                         READY   STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-b8d8894fb-ft2vz      1/1     Running   0          24m
+kube-system   calico-node-m4r8s                            1/1     Running   0          8m30s
+kube-system   calico-node-msqzw                            1/1     Running   0          24m
+kube-system   calico-node-tpf8w                            1/1     Running   0          15m
+kube-system   coredns-7c65d6cfc9-jtdrg                     1/1     Running   0          26m
+kube-system   coredns-7c65d6cfc9-vbjnv                     1/1     Running   0          26m
+kube-system   etcd-master.example.com                      1/1     Running   0          26m
+kube-system   kube-apiserver-master.example.com            1/1     Running   0          26m
+kube-system   kube-controller-manager-master.example.com   1/1     Running   0          26m
+kube-system   kube-proxy-68dss                             1/1     Running   0          15m
+kube-system   kube-proxy-srcb5                             1/1     Running   0          8m30s
+kube-system   kube-proxy-wjqpr                             1/1     Running   0          26m
+kube-system   kube-scheduler-master.example.com            1/1     Running   0          26m
+kubevirt      virt-api-8fcf7f45b-7qqhg                     1/1     Running   0          3m29s
+kubevirt      virt-api-8fcf7f45b-n44v6                     1/1     Running   0          3m29s
+kubevirt      virt-controller-54ffc5877b-6bfvm             1/1     Running   0          2m44s
+kubevirt      virt-controller-54ffc5877b-tgv4d             1/1     Running   0          2m44s
+kubevirt      virt-handler-d9pdj                           0/1     Running   0          2m44s
+kubevirt      virt-handler-g9dmz                           1/1     Running   0          2m44s
+kubevirt      virt-operator-656d6cf6d7-lmsz7               1/1     Running   0          4m37s
+kubevirt      virt-operator-656d6cf6d7-pprjd               1/1     Running   0          4m37s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m31s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m31s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m46s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m46s
+virt-handler-d9pdj                 0/1     Running   0          2m46s
+virt-handler-g9dmz                 1/1     Running   0          2m46s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m39s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m39s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m33s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m33s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m48s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m48s
+virt-handler-d9pdj                 0/1     Running   0          2m48s
+virt-handler-g9dmz                 1/1     Running   0          2m48s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m41s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m41s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m34s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m34s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m49s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m49s
+virt-handler-d9pdj                 0/1     Running   0          2m49s
+virt-handler-g9dmz                 1/1     Running   0          2m49s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m42s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m42s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m36s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m36s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m51s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m51s
+virt-handler-d9pdj                 0/1     Running   0          2m51s
+virt-handler-g9dmz                 1/1     Running   0          2m51s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m44s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m44s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m36s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m36s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m51s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m51s
+virt-handler-d9pdj                 0/1     Running   0          2m51s
+virt-handler-g9dmz                 1/1     Running   0          2m51s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m44s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m44s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m37s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m37s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m52s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m52s
+virt-handler-d9pdj                 0/1     Running   0          2m52s
+virt-handler-g9dmz                 1/1     Running   0          2m52s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m45s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m45s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m38s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m38s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m53s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m53s
+virt-handler-d9pdj                 0/1     Running   0          2m53s
+virt-handler-g9dmz                 1/1     Running   0          2m53s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m46s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m46s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m40s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m40s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m55s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m55s
+virt-handler-d9pdj                 0/1     Running   0          2m55s
+virt-handler-g9dmz                 1/1     Running   0          2m55s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m48s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m48s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m41s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m41s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m56s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m56s
+virt-handler-d9pdj                 0/1     Running   0          2m56s
+virt-handler-g9dmz                 1/1     Running   0          2m56s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m49s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m49s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m42s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m42s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m57s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m57s
+virt-handler-d9pdj                 0/1     Running   0          2m57s
+virt-handler-g9dmz                 1/1     Running   0          2m57s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m50s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m50s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m43s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m43s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m58s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m58s
+virt-handler-d9pdj                 0/1     Running   0          2m58s
+virt-handler-g9dmz                 1/1     Running   0          2m58s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m51s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m51s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m44s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m44s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          2m59s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          2m59s
+virt-handler-d9pdj                 0/1     Running   0          2m59s
+virt-handler-g9dmz                 1/1     Running   0          2m59s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m52s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m52s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          3m45s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          3m45s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          3m
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          3m
+virt-handler-d9pdj                 0/1     Running   0          3m
+virt-handler-g9dmz                 1/1     Running   0          3m
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          4m53s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          4m53s
+[root@master ~]# kubectl get events -n kubevirt
+LAST SEEN   TYPE     REASON              OBJECT                                                                MESSAGE
+4m17s       Normal   SuccessfulCreate    job/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlg        Created pod: kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkv                       m5c
+4m4s        Normal   Completed           job/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlg        Job completed
+4m17s       Normal   Scheduled           pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Successfully assigned kubevirt/kubevirt-d3f6298e0857e9b8605544ac3c659e4d1                       5130d79-jobqcmlgkvm5c to master.example.com
+4m16s       Normal   Pulling             pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Pulling image "quay.io/kubevirt/virt-operator:v1.3.1"
+4m9s        Normal   Pulled              pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Successfully pulled image "quay.io/kubevirt/virt-operator:v1.3.1" in 7.31                       2s (7.312s including waiting). Image size: 39577426 bytes.
+4m9s        Normal   Created             pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Created container install-strategy-upload
+4m9s        Normal   Started             pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Started container install-strategy-upload
+3m55s       Normal   Scheduled           pod/virt-api-8fcf7f45b-7qqhg                                          Successfully assigned kubevirt/virt-api-8fcf7f45b-7qqhg to master.example                       .com
+3m55s       Normal   Pulling             pod/virt-api-8fcf7f45b-7qqhg                                          Pulling image "quay.io/kubevirt/virt-api:v1.3.1"
+3m38s       Normal   Pulled              pod/virt-api-8fcf7f45b-7qqhg                                          Successfully pulled image "quay.io/kubevirt/virt-api:v1.3.1" in 17.122s (                       17.122s including waiting). Image size: 27619360 bytes.
+3m38s       Normal   Created             pod/virt-api-8fcf7f45b-7qqhg                                          Created container virt-api
+3m38s       Normal   Started             pod/virt-api-8fcf7f45b-7qqhg                                          Started container virt-api
+3m55s       Normal   Scheduled           pod/virt-api-8fcf7f45b-n44v6                                          Successfully assigned kubevirt/virt-api-8fcf7f45b-n44v6 to master.example                       .com
+3m55s       Normal   Pulling             pod/virt-api-8fcf7f45b-n44v6                                          Pulling image "quay.io/kubevirt/virt-api:v1.3.1"
+3m37s       Normal   Pulled              pod/virt-api-8fcf7f45b-n44v6                                          Successfully pulled image "quay.io/kubevirt/virt-api:v1.3.1" in 849ms (17                       .88s including waiting). Image size: 27619360 bytes.
+3m37s       Normal   Created             pod/virt-api-8fcf7f45b-n44v6                                          Created container virt-api
+3m37s       Normal   Started             pod/virt-api-8fcf7f45b-n44v6                                          Started container virt-api
+3m55s       Normal   SuccessfulCreate    replicaset/virt-api-8fcf7f45b                                         Created pod: virt-api-8fcf7f45b-7qqhg
+3m55s       Normal   SuccessfulCreate    replicaset/virt-api-8fcf7f45b                                         Created pod: virt-api-8fcf7f45b-n44v6
+3m55s       Normal   NoPods              poddisruptionbudget/virt-api-pdb                                      No matching pods found
+3m55s       Normal   ScalingReplicaSet   deployment/virt-api                                                   Scaled up replica set virt-api-8fcf7f45b to 2
+3m10s       Normal   Scheduled           pod/virt-controller-54ffc5877b-6bfvm                                  Successfully assigned kubevirt/virt-controller-54ffc5877b-6bfvm to master                       .example.com
+3m9s        Normal   Pulling             pod/virt-controller-54ffc5877b-6bfvm                                  Pulling image "quay.io/kubevirt/virt-controller:v1.3.1"
+2m58s       Normal   Pulled              pod/virt-controller-54ffc5877b-6bfvm                                  Successfully pulled image "quay.io/kubevirt/virt-controller:v1.3.1" in 80                       8ms (10.916s including waiting). Image size: 26671174 bytes.
+2m58s       Normal   Created             pod/virt-controller-54ffc5877b-6bfvm                                  Created container virt-controller
+2m58s       Normal   Started             pod/virt-controller-54ffc5877b-6bfvm                                  Started container virt-controller
+3m10s       Normal   Scheduled           pod/virt-controller-54ffc5877b-tgv4d                                  Successfully assigned kubevirt/virt-controller-54ffc5877b-tgv4d to master                       .example.com
+3m9s        Normal   Pulling             pod/virt-controller-54ffc5877b-tgv4d                                  Pulling image "quay.io/kubevirt/virt-controller:v1.3.1"
+2m59s       Normal   Pulled              pod/virt-controller-54ffc5877b-tgv4d                                  Successfully pulled image "quay.io/kubevirt/virt-controller:v1.3.1" in 10                       .215s (10.215s including waiting). Image size: 26671174 bytes.
+2m59s       Normal   Created             pod/virt-controller-54ffc5877b-tgv4d                                  Created container virt-controller
+2m59s       Normal   Started             pod/virt-controller-54ffc5877b-tgv4d                                  Started container virt-controller
+3m10s       Normal   SuccessfulCreate    replicaset/virt-controller-54ffc5877b                                 Created pod: virt-controller-54ffc5877b-tgv4d
+3m10s       Normal   SuccessfulCreate    replicaset/virt-controller-54ffc5877b                                 Created pod: virt-controller-54ffc5877b-6bfvm
+3m10s       Normal   NoPods              poddisruptionbudget/virt-controller-pdb                               No matching pods found
+3m10s       Normal   ScalingReplicaSet   deployment/virt-controller                                            Scaled up replica set virt-controller-54ffc5877b to 2
+2m59s       Normal   LeaderElection      lease/virt-controller                                                 virt-controller-54ffc5877b-tgv4d became leader
+3m10s       Normal   Scheduled           pod/virt-handler-d9pdj                                                Successfully assigned kubevirt/virt-handler-d9pdj to worker2.example.com
+3m9s        Normal   Pulling             pod/virt-handler-d9pdj                                                Pulling image "quay.io/kubevirt/virt-launcher:v1.3.1"
+2m1s        Normal   Pulled              pod/virt-handler-d9pdj                                                Successfully pulled image "quay.io/kubevirt/virt-launcher:v1.3.1" in 1m8.                       664s (1m8.664s including waiting). Image size: 164087662 bytes.
+2m1s        Normal   Created             pod/virt-handler-d9pdj                                                Created container virt-launcher
+2m1s        Normal   Started             pod/virt-handler-d9pdj                                                Started container virt-launcher
+119s        Normal   Pulling             pod/virt-handler-d9pdj                                                Pulling image "quay.io/kubevirt/virt-handler:v1.3.1"
+39s         Normal   Pulled              pod/virt-handler-d9pdj                                                Successfully pulled image "quay.io/kubevirt/virt-handler:v1.3.1" in 1m19.                       23s (1m19.23s including waiting). Image size: 89152682 bytes.
+39s         Normal   Created             pod/virt-handler-d9pdj                                                Created container virt-handler
+39s         Normal   Started             pod/virt-handler-d9pdj                                                Started container virt-handler
+3m10s       Normal   Scheduled           pod/virt-handler-g9dmz                                                Successfully assigned kubevirt/virt-handler-g9dmz to worker1.example.com
+3m9s        Normal   Pulling             pod/virt-handler-g9dmz                                                Pulling image "quay.io/kubevirt/virt-launcher:v1.3.1"
+2m3s        Normal   Pulled              pod/virt-handler-g9dmz                                                Successfully pulled image "quay.io/kubevirt/virt-launcher:v1.3.1" in 1m5.                       765s (1m5.765s including waiting). Image size: 164087662 bytes.
+2m3s        Normal   Created             pod/virt-handler-g9dmz                                                Created container virt-launcher
+2m3s        Normal   Started             pod/virt-handler-g9dmz                                                Started container virt-launcher
+2m2s        Normal   Pulling             pod/virt-handler-g9dmz                                                Pulling image "quay.io/kubevirt/virt-handler:v1.3.1"
+58s         Normal   Pulled              pod/virt-handler-g9dmz                                                Successfully pulled image "quay.io/kubevirt/virt-handler:v1.3.1" in 1m3.4                       93s (1m3.493s including waiting). Image size: 89152682 bytes.
+58s         Normal   Created             pod/virt-handler-g9dmz                                                Created container virt-handler
+58s         Normal   Started             pod/virt-handler-g9dmz                                                Started container virt-handler
+3m10s       Normal   SuccessfulCreate    daemonset/virt-handler                                                Created pod: virt-handler-g9dmz
+3m10s       Normal   SuccessfulCreate    daemonset/virt-handler                                                Created pod: virt-handler-d9pdj
+5m3s        Normal   Scheduled           pod/virt-operator-656d6cf6d7-lmsz7                                    Successfully assigned kubevirt/virt-operator-656d6cf6d7-lmsz7 to worker1.                       example.com
+5m2s        Normal   Pulling             pod/virt-operator-656d6cf6d7-lmsz7                                    Pulling image "quay.io/kubevirt/virt-operator:v1.3.1"
+4m29s       Normal   Pulled              pod/virt-operator-656d6cf6d7-lmsz7                                    Successfully pulled image "quay.io/kubevirt/virt-operator:v1.3.1" in 32.7                       89s (32.789s including waiting). Image size: 39577426 bytes.
+4m29s       Normal   Created             pod/virt-operator-656d6cf6d7-lmsz7                                    Created container virt-operator
+4m29s       Normal   Started             pod/virt-operator-656d6cf6d7-lmsz7                                    Started container virt-operator
+5m3s        Normal   Scheduled           pod/virt-operator-656d6cf6d7-pprjd                                    Successfully assigned kubevirt/virt-operator-656d6cf6d7-pprjd to worker2.                       example.com
+5m2s        Normal   Pulling             pod/virt-operator-656d6cf6d7-pprjd                                    Pulling image "quay.io/kubevirt/virt-operator:v1.3.1"
+4m28s       Normal   Pulled              pod/virt-operator-656d6cf6d7-pprjd                                    Successfully pulled image "quay.io/kubevirt/virt-operator:v1.3.1" in 34.0                       88s (34.088s including waiting). Image size: 39577426 bytes.
+4m28s       Normal   Created             pod/virt-operator-656d6cf6d7-pprjd                                    Created container virt-operator
+4m28s       Normal   Started             pod/virt-operator-656d6cf6d7-pprjd                                    Started container virt-operator
+5m3s        Normal   SuccessfulCreate    replicaset/virt-operator-656d6cf6d7                                   Created pod: virt-operator-656d6cf6d7-pprjd
+5m3s        Normal   SuccessfulCreate    replicaset/virt-operator-656d6cf6d7                                   Created pod: virt-operator-656d6cf6d7-lmsz7
+5m3s        Normal   ScalingReplicaSet   deployment/virt-operator                                              Scaled up replica set virt-operator-656d6cf6d7 to 2
+4m27s       Normal   LeaderElection      lease/virt-operator                                                   virt-operator-656d6cf6d7-lmsz7 became leader
+[root@master ~]# kubectl get events -n kubevirt
+LAST SEEN   TYPE     REASON              OBJECT                                                                MESSAGE
+4m29s       Normal   SuccessfulCreate    job/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlg        Created pod: kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkv                       m5c
+4m16s       Normal   Completed           job/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlg        Job completed
+4m29s       Normal   Scheduled           pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Successfully assigned kubevirt/kubevirt-d3f6298e0857e9b8605544ac3c659e4d1                       5130d79-jobqcmlgkvm5c to master.example.com
+4m28s       Normal   Pulling             pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Pulling image "quay.io/kubevirt/virt-operator:v1.3.1"
+4m21s       Normal   Pulled              pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Successfully pulled image "quay.io/kubevirt/virt-operator:v1.3.1" in 7.31                       2s (7.312s including waiting). Image size: 39577426 bytes.
+4m21s       Normal   Created             pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Created container install-strategy-upload
+4m21s       Normal   Started             pod/kubevirt-d3f6298e0857e9b8605544ac3c659e4d15130d79-jobqcmlgkvm5c   Started container install-strategy-upload
+4m7s        Normal   Scheduled           pod/virt-api-8fcf7f45b-7qqhg                                          Successfully assigned kubevirt/virt-api-8fcf7f45b-7qqhg to master.example                       .com
+4m7s        Normal   Pulling             pod/virt-api-8fcf7f45b-7qqhg                                          Pulling image "quay.io/kubevirt/virt-api:v1.3.1"
+3m50s       Normal   Pulled              pod/virt-api-8fcf7f45b-7qqhg                                          Successfully pulled image "quay.io/kubevirt/virt-api:v1.3.1" in 17.122s (                       17.122s including waiting). Image size: 27619360 bytes.
+3m50s       Normal   Created             pod/virt-api-8fcf7f45b-7qqhg                                          Created container virt-api
+3m50s       Normal   Started             pod/virt-api-8fcf7f45b-7qqhg                                          Started container virt-api
+4m7s        Normal   Scheduled           pod/virt-api-8fcf7f45b-n44v6                                          Successfully assigned kubevirt/virt-api-8fcf7f45b-n44v6 to master.example                       .com
+4m7s        Normal   Pulling             pod/virt-api-8fcf7f45b-n44v6                                          Pulling image "quay.io/kubevirt/virt-api:v1.3.1"
+3m49s       Normal   Pulled              pod/virt-api-8fcf7f45b-n44v6                                          Successfully pulled image "quay.io/kubevirt/virt-api:v1.3.1" in 849ms (17                       .88s including waiting). Image size: 27619360 bytes.
+3m49s       Normal   Created             pod/virt-api-8fcf7f45b-n44v6                                          Created container virt-api
+3m49s       Normal   Started             pod/virt-api-8fcf7f45b-n44v6                                          Started container virt-api
+4m7s        Normal   SuccessfulCreate    replicaset/virt-api-8fcf7f45b                                         Created pod: virt-api-8fcf7f45b-7qqhg
+4m7s        Normal   SuccessfulCreate    replicaset/virt-api-8fcf7f45b                                         Created pod: virt-api-8fcf7f45b-n44v6
+4m7s        Normal   NoPods              poddisruptionbudget/virt-api-pdb                                      No matching pods found
+4m7s        Normal   ScalingReplicaSet   deployment/virt-api                                                   Scaled up replica set virt-api-8fcf7f45b to 2
+3m22s       Normal   Scheduled           pod/virt-controller-54ffc5877b-6bfvm                                  Successfully assigned kubevirt/virt-controller-54ffc5877b-6bfvm to master                       .example.com
+3m21s       Normal   Pulling             pod/virt-controller-54ffc5877b-6bfvm                                  Pulling image "quay.io/kubevirt/virt-controller:v1.3.1"
+3m10s       Normal   Pulled              pod/virt-controller-54ffc5877b-6bfvm                                  Successfully pulled image "quay.io/kubevirt/virt-controller:v1.3.1" in 80                       8ms (10.916s including waiting). Image size: 26671174 bytes.
+3m10s       Normal   Created             pod/virt-controller-54ffc5877b-6bfvm                                  Created container virt-controller
+3m10s       Normal   Started             pod/virt-controller-54ffc5877b-6bfvm                                  Started container virt-controller
+3m22s       Normal   Scheduled           pod/virt-controller-54ffc5877b-tgv4d                                  Successfully assigned kubevirt/virt-controller-54ffc5877b-tgv4d to master                       .example.com
+3m21s       Normal   Pulling             pod/virt-controller-54ffc5877b-tgv4d                                  Pulling image "quay.io/kubevirt/virt-controller:v1.3.1"
+3m11s       Normal   Pulled              pod/virt-controller-54ffc5877b-tgv4d                                  Successfully pulled image "quay.io/kubevirt/virt-controller:v1.3.1" in 10                       .215s (10.215s including waiting). Image size: 26671174 bytes.
+3m11s       Normal   Created             pod/virt-controller-54ffc5877b-tgv4d                                  Created container virt-controller
+3m11s       Normal   Started             pod/virt-controller-54ffc5877b-tgv4d                                  Started container virt-controller
+3m22s       Normal   SuccessfulCreate    replicaset/virt-controller-54ffc5877b                                 Created pod: virt-controller-54ffc5877b-tgv4d
+3m22s       Normal   SuccessfulCreate    replicaset/virt-controller-54ffc5877b                                 Created pod: virt-controller-54ffc5877b-6bfvm
+3m22s       Normal   NoPods              poddisruptionbudget/virt-controller-pdb                               No matching pods found
+3m22s       Normal   ScalingReplicaSet   deployment/virt-controller                                            Scaled up replica set virt-controller-54ffc5877b to 2
+3m11s       Normal   LeaderElection      lease/virt-controller                                                 virt-controller-54ffc5877b-tgv4d became leader
+3m22s       Normal   Scheduled           pod/virt-handler-d9pdj                                                Successfully assigned kubevirt/virt-handler-d9pdj to worker2.example.com
+3m21s       Normal   Pulling             pod/virt-handler-d9pdj                                                Pulling image "quay.io/kubevirt/virt-launcher:v1.3.1"
+2m13s       Normal   Pulled              pod/virt-handler-d9pdj                                                Successfully pulled image "quay.io/kubevirt/virt-launcher:v1.3.1" in 1m8.                       664s (1m8.664s including waiting). Image size: 164087662 bytes.
+2m13s       Normal   Created             pod/virt-handler-d9pdj                                                Created container virt-launcher
+2m13s       Normal   Started             pod/virt-handler-d9pdj                                                Started container virt-launcher
+2m11s       Normal   Pulling             pod/virt-handler-d9pdj                                                Pulling image "quay.io/kubevirt/virt-handler:v1.3.1"
+51s         Normal   Pulled              pod/virt-handler-d9pdj                                                Successfully pulled image "quay.io/kubevirt/virt-handler:v1.3.1" in 1m19.                       23s (1m19.23s including waiting). Image size: 89152682 bytes.
+51s         Normal   Created             pod/virt-handler-d9pdj                                                Created container virt-handler
+51s         Normal   Started             pod/virt-handler-d9pdj                                                Started container virt-handler
+3m22s       Normal   Scheduled           pod/virt-handler-g9dmz                                                Successfully assigned kubevirt/virt-handler-g9dmz to worker1.example.com
+3m21s       Normal   Pulling             pod/virt-handler-g9dmz                                                Pulling image "quay.io/kubevirt/virt-launcher:v1.3.1"
+2m15s       Normal   Pulled              pod/virt-handler-g9dmz                                                Successfully pulled image "quay.io/kubevirt/virt-launcher:v1.3.1" in 1m5.                       765s (1m5.765s including waiting). Image size: 164087662 bytes.
+2m15s       Normal   Created             pod/virt-handler-g9dmz                                                Created container virt-launcher
+2m15s       Normal   Started             pod/virt-handler-g9dmz                                                Started container virt-launcher
+2m14s       Normal   Pulling             pod/virt-handler-g9dmz                                                Pulling image "quay.io/kubevirt/virt-handler:v1.3.1"
+70s         Normal   Pulled              pod/virt-handler-g9dmz                                                Successfully pulled image "quay.io/kubevirt/virt-handler:v1.3.1" in 1m3.4                       93s (1m3.493s including waiting). Image size: 89152682 bytes.
+70s         Normal   Created             pod/virt-handler-g9dmz                                                Created container virt-handler
+70s         Normal   Started             pod/virt-handler-g9dmz                                                Started container virt-handler
+3m22s       Normal   SuccessfulCreate    daemonset/virt-handler                                                Created pod: virt-handler-g9dmz
+3m22s       Normal   SuccessfulCreate    daemonset/virt-handler                                                Created pod: virt-handler-d9pdj
+5m15s       Normal   Scheduled           pod/virt-operator-656d6cf6d7-lmsz7                                    Successfully assigned kubevirt/virt-operator-656d6cf6d7-lmsz7 to worker1.                       example.com
+5m14s       Normal   Pulling             pod/virt-operator-656d6cf6d7-lmsz7                                    Pulling image "quay.io/kubevirt/virt-operator:v1.3.1"
+4m41s       Normal   Pulled              pod/virt-operator-656d6cf6d7-lmsz7                                    Successfully pulled image "quay.io/kubevirt/virt-operator:v1.3.1" in 32.7                       89s (32.789s including waiting). Image size: 39577426 bytes.
+4m41s       Normal   Created             pod/virt-operator-656d6cf6d7-lmsz7                                    Created container virt-operator
+4m41s       Normal   Started             pod/virt-operator-656d6cf6d7-lmsz7                                    Started container virt-operator
+5m15s       Normal   Scheduled           pod/virt-operator-656d6cf6d7-pprjd                                    Successfully assigned kubevirt/virt-operator-656d6cf6d7-pprjd to worker2.                       example.com
+5m14s       Normal   Pulling             pod/virt-operator-656d6cf6d7-pprjd                                    Pulling image "quay.io/kubevirt/virt-operator:v1.3.1"
+4m40s       Normal   Pulled              pod/virt-operator-656d6cf6d7-pprjd                                    Successfully pulled image "quay.io/kubevirt/virt-operator:v1.3.1" in 34.0                       88s (34.088s including waiting). Image size: 39577426 bytes.
+4m40s       Normal   Created             pod/virt-operator-656d6cf6d7-pprjd                                    Created container virt-operator
+4m40s       Normal   Started             pod/virt-operator-656d6cf6d7-pprjd                                    Started container virt-operator
+5m15s       Normal   SuccessfulCreate    replicaset/virt-operator-656d6cf6d7                                   Created pod: virt-operator-656d6cf6d7-pprjd
+5m15s       Normal   SuccessfulCreate    replicaset/virt-operator-656d6cf6d7                                   Created pod: virt-operator-656d6cf6d7-lmsz7
+5m15s       Normal   ScalingReplicaSet   deployment/virt-operator                                              Scaled up replica set virt-operator-656d6cf6d7 to 2
+4m39s       Normal   LeaderElection      lease/virt-operator                                                   virt-operator-656d6cf6d7-lmsz7 became leader
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS   AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   0          4m9s
+virt-api-8fcf7f45b-n44v6           1/1     Running   0          4m9s
+virt-controller-54ffc5877b-6bfvm   1/1     Running   0          3m24s
+virt-controller-54ffc5877b-tgv4d   1/1     Running   0          3m24s
+virt-handler-d9pdj                 1/1     Running   0          3m24s
+virt-handler-g9dmz                 1/1     Running   0          3m24s
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0          5m17s
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0          5m17s
+[root@master ~]# export TAG=$(curl -s -w %{redirect_url} https://github.com/kubevirt/containerized-data-importer/releases/latest)
+[root@master ~]# export VERSION=$(echo ${TAG##*/})
+[root@master ~]# kubectl create -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-operator.yaml
+namespace/cdi created
+customresourcedefinition.apiextensions.k8s.io/cdis.cdi.kubevirt.io created
+clusterrole.rbac.authorization.k8s.io/cdi-operator-cluster created
+clusterrolebinding.rbac.authorization.k8s.io/cdi-operator created
+serviceaccount/cdi-operator created
+role.rbac.authorization.k8s.io/cdi-operator created
+rolebinding.rbac.authorization.k8s.io/cdi-operator created
+deployment.apps/cdi-operator created
+[root@master ~]# kubectl get pods -n cdi
+NAME                           READY   STATUS              RESTARTS   AGE
+cdi-operator-775d9b45d-gqrsg   0/1     ContainerCreating   0          13s
+[root@master ~]# kubectl get pods -n cdi
+NAME                           READY   STATUS              RESTARTS   AGE
+cdi-operator-775d9b45d-gqrsg   0/1     ContainerCreating   0          16s
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           3.8Gi       2.0Gi       193Mi        11Mi       1.8Gi       1.8Gi
+Swap:             0B          0B          0B
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           4.8Gi       2.0Gi       1.2Gi        11Mi       1.8Gi       2.8Gi
+Swap:             0B          0B          0B
+[root@master ~]# kubectl get pods -n cdi
+NAME                           READY   STATUS    RESTARTS   AGE
+cdi-operator-775d9b45d-gqrsg   1/1     Running   0          82s
+[root@master ~]# kubectl create -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-cr.yaml
+cdi.cdi.kubevirt.io/cdi created
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS              RESTARTS   AGE
+cdi-apiserver-6bdf46b899-wvb8j     0/1     ContainerCreating   0          4s
+cdi-deployment-7756f757bb-j6vnf    0/1     ContainerCreating   0          4s
+cdi-operator-775d9b45d-gqrsg       1/1     Running             0          108s
+cdi-uploadproxy-56bf8845cf-78gpr   0/1     ContainerCreating   0          4s
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           4.8Gi       2.1Gi       1.0Gi        11Mi       1.9Gi       2.7Gi
+Swap:             0B          0B          0B
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           4.8Gi       2.1Gi       1.0Gi        11Mi       1.9Gi       2.6Gi
+Swap:             0B          0B          0B
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           4.8Gi       2.1Gi       1.0Gi        11Mi       1.9Gi       2.7Gi
+Swap:             0B          0B          0B
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           4.8Gi       2.1Gi       1.0Gi        11Mi       1.9Gi       2.7Gi
+Swap:             0B          0B          0B
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS              RESTARTS   AGE
+cdi-apiserver-6bdf46b899-wvb8j     1/1     Running             0          24s
+cdi-deployment-7756f757bb-j6vnf    0/1     ContainerCreating   0          24s
+cdi-operator-775d9b45d-gqrsg       1/1     Running             0          2m8s
+cdi-uploadproxy-56bf8845cf-78gpr   1/1     Running             0          24s
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS              RESTARTS   AGE
+cdi-apiserver-6bdf46b899-wvb8j     1/1     Running             0          26s
+cdi-deployment-7756f757bb-j6vnf    0/1     ContainerCreating   0          26s
+cdi-operator-775d9b45d-gqrsg       1/1     Running             0          2m10s
+cdi-uploadproxy-56bf8845cf-78gpr   1/1     Running             0          26s
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS    RESTARTS   AGE
+cdi-apiserver-6bdf46b899-wvb8j     1/1     Running   0          46s
+cdi-deployment-7756f757bb-j6vnf    1/1     Running   0          46s
+cdi-operator-775d9b45d-gqrsg       1/1     Running   0          2m30s
+cdi-uploadproxy-56bf8845cf-78gpr   1/1     Running   0          46s
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           4.8Gi       2.1Gi       1.0Gi        11Mi       1.9Gi       2.6Gi
+Swap:             0B          0B          0B
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           4.8Gi       2.1Gi       1.0Gi        11Mi       1.9Gi       2.6Gi
+Swap:             0B          0B          0B
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS    RESTARTS   AGE
+cdi-apiserver-6bdf46b899-wvb8j     1/1     Running   0          2m24s
+cdi-deployment-7756f757bb-j6vnf    1/1     Running   0          2m24s
+cdi-operator-775d9b45d-gqrsg       1/1     Running   0          4m8s
+cdi-uploadproxy-56bf8845cf-78gpr   1/1     Running   0          2m24s
+[root@master ~]# uptime
+ 13:19:34 up 37 min,  1 user,  load average: 0.43, 0.60, 0.52
+[root@master ~]# free -mh
+               total        used        free      shared  buff/cache   available
+Mem:           4.8Gi       2.1Gi       1.1Gi        11Mi       1.9Gi       2.7Gi
+Swap:             0B          0B          0B
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS    RESTARTS   AGE
+cdi-apiserver-6bdf46b899-wvb8j     1/1     Running   0          4m2s
+cdi-deployment-7756f757bb-j6vnf    1/1     Running   0          4m2s
+cdi-operator-775d9b45d-gqrsg       1/1     Running   0          5m46s
+cdi-uploadproxy-56bf8845cf-78gpr   1/1     Running   0          4m2s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS       AGE
+virt-api-8fcf7f45b-7qqhg           1/1     Running   1 (4m4s ago)   11m
+virt-api-8fcf7f45b-n44v6           1/1     Running   1 (4m4s ago)   11m
+virt-controller-54ffc5877b-6bfvm   1/1     Running   1 (4m9s ago)   10m
+virt-controller-54ffc5877b-tgv4d   1/1     Running   1 (4m9s ago)   10m
+virt-handler-d9pdj                 1/1     Running   0              10m
+virt-handler-g9dmz                 1/1     Running   0              10m
+virt-operator-656d6cf6d7-lmsz7     1/1     Running   0              12m
+virt-operator-656d6cf6d7-pprjd     1/1     Running   0              12m 
