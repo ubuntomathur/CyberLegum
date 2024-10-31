@@ -176,5 +176,5 @@ nfs-client-provisioner-75fc74788b-kklc6   1/1     Running   10 (8h ago)   2d9h
 virt-launcher-win2k12-iso-g75mf           3/3     Running   0             35m
 [root@master tree] virtctl vnc win2k12-iso
 
-![Image Alt](https://github.com/ubuntomathur/CyberLegum/blob/a0957441dd54f0d1b4f4b7ed8ee22f1412836f4f/2024-10-30_15-57-29.png)
+
 
