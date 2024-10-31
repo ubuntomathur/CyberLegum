@@ -1,0 +1,180 @@
+Deploy a Windows VM as a Pod in Kubernetes Using KubeVirt
+
+Step1:// Cluster Status 
+
+[root@master tree]# kubectl get nodes
+NAME                  STATUS   ROLES           AGE    VERSION
+master.example.com    Ready    control-plane   3d6h   v1.31.2
+worker1.example.com   Ready    <none>          3d6h   v1.31.2
+worker2.example.com   Ready    <none>          3d6h   v1.31.2
+[root@master tree]#
+
+[root@master tree]# kubectl get pods -A
+NAMESPACE     NAME                                         READY   STATUS    RESTARTS      AGE
+cdi           cdi-apiserver-6bdf46b899-wvb8j               1/1     Running   17 (8h ago)   3d6h
+cdi           cdi-deployment-7756f757bb-j6vnf              1/1     Running   18 (8h ago)   3d6h
+cdi           cdi-operator-775d9b45d-gqrsg                 1/1     Running   12 (8h ago)   3d6h
+cdi           cdi-uploadproxy-56bf8845cf-78gpr             1/1     Running   9 (8h ago)    3d6h
+default       nfs-client-provisioner-75fc74788b-kklc6      1/1     Running   10 (8h ago)   2d9h
+default       virt-launcher-win2k12-iso-g75mf              3/3     Running   0             23m
+kube-system   calico-kube-controllers-b8d8894fb-ft2vz      1/1     Running   8 (8h ago)    3d6h
+kube-system   calico-node-m4r8s                            1/1     Running   9 (8h ago)    3d6h
+kube-system   calico-node-msqzw                            1/1     Running   7 (8h ago)    3d6h
+kube-system   calico-node-tpf8w                            1/1     Running   8 (8h ago)    3d6h
+kube-system   coredns-7c65d6cfc9-jtdrg                     1/1     Running   8 (8h ago)    3d6h
+kube-system   coredns-7c65d6cfc9-vbjnv                     1/1     Running   8 (8h ago)    3d6h
+kube-system   etcd-master.example.com                      1/1     Running   8 (8h ago)    3d6h
+kube-system   kube-apiserver-master.example.com            1/1     Running   8 (8h ago)    3d6h
+kube-system   kube-controller-manager-master.example.com   1/1     Running   9 (8h ago)    3d6h
+kube-system   kube-proxy-68dss                             1/1     Running   9 (8h ago)    3d6h
+kube-system   kube-proxy-srcb5                             1/1     Running   9 (8h ago)    3d6h
+kube-system   kube-proxy-wjqpr                             1/1     Running   8 (8h ago)    3d6h
+kube-system   kube-scheduler-master.example.com            1/1     Running   8 (8h ago)    3d6h
+kube-system   metrics-server-77749d54c9-xqf8w              1/1     Running   6 (8h ago)    25h
+kubevirt      virt-api-8fcf7f45b-7qqhg                     1/1     Running   9 (8h ago)    3d6h
+kubevirt      virt-api-8fcf7f45b-n44v6                     1/1     Running   9 (8h ago)    3d6h
+kubevirt      virt-controller-54ffc5877b-6bfvm             1/1     Running   9 (8h ago)    3d6h
+kubevirt      virt-controller-54ffc5877b-tgv4d             1/1     Running   9 (8h ago)    3d6h
+kubevirt      virt-handler-d9pdj                           1/1     Running   9 (8h ago)    3d6h
+kubevirt      virt-handler-g9dmz                           1/1     Running   8 (8h ago)    3d6h
+kubevirt      virt-operator-656d6cf6d7-lmsz7               1/1     Running   14 (8h ago)   3d6h
+kubevirt      virt-operator-656d6cf6d7-pprjd               1/1     Running   14 (8h ago)   3d6h
+[root@master tree]#
+Step2://Download the window ISO file 
+https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2012-r2
+
+There will be 2 PVC one for ISO file attached as CD_ROM and other one for HDD 
+
+Step3:// A PVC with the Microsoft Windows ISO file attached as CD-ROM to the VM
+
+[root@master tree]# virtctl image-upload --image-path=/var/www/html/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.iso --pvc-name=iso-win2k12 --access-mode=ReadWriteMany --pvc-size=30G --uploadproxy-url=https://10.104.57.165:443 --insecure
+Flag --pvc-name has been deprecated, specify the name as the second argument instead.
+Flag --pvc-size has been deprecated, use --size instead.
+PVC default/iso-win2k12 not found
+PersistentVolumeClaim default/iso-win2k12 created
+Waiting for PVC iso-win2k12 upload pod to be ready...
+Pod now ready
+Uploading data to https://10.104.57.165:443
+
+ 4.23 GiB / 4.23 GiB [==================================================================================================================] 100.00% 1m19s
+
+Uploading data completed successfully, waiting for processing to complete, you can hit ctrl-c without interrupting the progress
+Processing completed successfully
+Uploading /var/www/html/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.iso completed successfully
+
+step4://A PVC for the hard drive where the Operating System is going to be installed, in this example it is called winhd 
+
+[root@master tree]# cat pvc.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: winhd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 30Gi
+  storageClassName: nfs-client
+[root@master tree]#
+
+Step5:// PVC status 
+
+[root@master tree]# kubectl get pvc
+NAME          STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+iso-win2k12   Bound    pvc-c9a82bc0-a90d-4ce0-a3ac-328bc87fbc4c   30G        RWX            nfs-client     <unset>                 99m
+winhd         Bound    pvc-ad61bc20-00e0-43a4-9a00-f8dd562e98e8   30Gi       RWO            nfs-client     <unset>                 34m
+[root@master tree]#
+
+
+
+[root@master tree]# ctr images pull docker.io/kubevirt/virtio-container-disk:latest
+docker.io/kubevirt/virtio-container-disk:latest:                 resolved    |++++++++++++++++++++++++++++++++++++++|
+manifest-sha256:373fae39339fb0b77a101c825b66b5ceadd79397119e46d0c540df26f74fc06a: done      |++++++++++++++++++++++++++++++++++++++|
+layer-sha256:da795872aad41544daf056d680503e6283544de66af042833fd32d1711535140:  done      |++++++++++++++++++++++++++++++++++++++|
+
+ctr images pull quay.io/kubevirt/virtio-container-disk:latest
+
+Step6:// Window manifest
+[root@master tree]# cat window33.yml
+apiVersion: kubevirt.io/v1alpha3
+kind: VirtualMachine
+metadata:
+  name: win2k12-iso
+spec:
+  running: false
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: win2k12-iso
+    spec:
+      domain:
+        cpu:
+          cores: 4
+        devices:
+          disks:
+          - bootOrder: 1
+            cdrom:
+              bus: sata
+            name: cdromiso
+          - disk:
+              bus: virtio
+            name: harddrive
+          - cdrom:
+              bus: sata
+            name: virtiocontainerdisk
+        machine:
+          type: q35
+        resources:
+          requests:
+            memory: 8G
+      volumes:
+      - name: cdromiso
+        persistentVolumeClaim:
+          claimName: iso-win2k12
+      - name: harddrive
+        persistentVolumeClaim:
+          claimName: winhd
+      - containerDisk:
+          image: kubevirt/virtio-container-disk
+        name: virtiocontainerdisk
+[root@master tree]#
+
+[root@master tree]# kubectl create -f window33.yml
+Warning: kubevirt.io/v1alpha3 is now deprecated and will be removed in a future release.
+virtualmachine.kubevirt.io/win2k12-iso created
+[root@master tree]# kubectl get vm
+NAME          AGE   STATUS    READY
+win2k12-iso   9s    Stopped   False
+[root@master tree]# virtctl start win2k12-iso
+VM win2k12-iso was scheduled to start
+[root@master tree]# kubectl get vm
+NAME          AGE   STATUS     READY
+win2k12-iso   21s   Starting   False
+[root@master tree]# kubectl get pods
+NAME                                      READY   STATUS     RESTARTS      AGE
+nfs-client-provisioner-75fc74788b-kklc6   1/1     Running    10 (8h ago)   2d9h
+virt-launcher-win2k12-iso-g75mf           0/3     Init:1/2   0             6s
+[root@master tree]# kubectl get vmi
+NAME          AGE   PHASE        IP    NODENAME   READY
+win2k12-iso   9s    Scheduling                    False
+[root@master tree]# kubectl get vmi
+NAME          AGE   PHASE        IP    NODENAME   READY
+win2k12-iso   10s   Scheduling                    False
+[root@master tree]# kubectl get vmi
+NAME          AGE     PHASE     IP              NODENAME              READY
+win2k12-iso   7m51s   Running   172.16.71.193   worker2.example.com   True 
+[root@master tree]# kubectl get vmi
+NAME          AGE   PHASE     IP              NODENAME              READY
+win2k12-iso   34m   Running   172.16.71.193   worker2.example.com   True
+[root@master tree]# kubectl get vm
+NAME          AGE   STATUS    READY
+win2k12-iso   35m   Running   True
+[root@master tree]# kubectl get pods
+NAME                                      READY   STATUS    RESTARTS      AGE
+nfs-client-provisioner-75fc74788b-kklc6   1/1     Running   10 (8h ago)   2d9h
+virt-launcher-win2k12-iso-g75mf           3/3     Running   0             35m
+[root@master tree] virtctl vnc win2k12-iso
+
+![Image Alt](https://github.com/ubuntomathur/CyberLegum/blob/a0957441dd54f0d1b4f4b7ed8ee22f1412836f4f/2024-10-30_15-57-29.png)
+
