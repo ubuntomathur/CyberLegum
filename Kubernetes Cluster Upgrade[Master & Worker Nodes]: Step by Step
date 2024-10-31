@@ -1,0 +1,575 @@
+Upgarde the CLuster Control Plan 
+
+[root@masternode ~]#  rpm -qa | grep -E 'kubeadm|kubelet|kubectl
+kubelet-1.23.2-0.x86_64
+kubeadm-1.23.2-0.x86_64
+kubectl-1.23.2-0.x86_64
+[root@masternode ~]# clear 
+[root@masternode ~]# kubectl get nodes
+NAME                      STATUS   ROLES                  AGE   VERSION
+masternode.example.com    Ready    control-plane,master   29m   v1.23.2
+workernode1.example.com   Ready    <none>                 27m   v1.23.2
+workernode2.example.com   Ready    <none>                 27m   v1.23.2
+[root@masternode ~]# rpm -qa | grep -E 'kubeadm|kubelet|kubectl'
+kubelet-1.23.2-0.x86_64
+kubeadm-1.23.2-0.x86_64
+kubectl-1.23.2-0.x86_64
+[root@masternode ~]# kubeadm upgrade plan 
+[upgrade/config] Making sure the configuration is correct:
+[upgrade/config] Reading configuration from the cluster...
+[upgrade/config] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
+[preflight] Running pre-flight checks.
+[upgrade] Running cluster health checks
+[upgrade] Fetching available versions to upgrade to
+[upgrade/versions] Cluster version: v1.23.17
+[upgrade/versions] kubeadm version: v1.23.2
+I0325 21:36:56.074773   33874 version.go:255] remote version is much newer: v1.26.3; falling back to: stable-1.23
+[upgrade/versions] Target version: v1.23.17
+[upgrade/versions] Latest version in the v1.23 series: v1.23.17
+
+
+[root@masternode ~]# yum install -y kubeadm-1.23.17-0 --disableexcludes=kubernetes
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirror.aktkn.sg
+ * extras: mirror.aktkn.sg
+ * updates: mirror.aktkn.sg
+kubernetes/x86_64/signature                                                                                    |  454 B  00:00:00     
+kubernetes/x86_64/signature                                                                                    | 1.4 kB  00:00:00 !!! 
+kubernetes/x86_64/primary                                                                                      | 126 kB  00:00:01     
+kubernetes                                                                                                                    941/941
+Resolving Dependencies
+--> Running transaction check
+---> Package kubeadm.x86_64 0:1.23.2-0 will be updated
+---> Package kubeadm.x86_64 0:1.23.17-0 will be an update
+--> Finished Dependency Resolution
+
+
+Dependencies Resolved
+
+
+======================================================================================================================================
+ Package                       Arch                         Version                            Repository                        Size
+======================================================================================================================================
+Updating:
+ kubeadm                       x86_64                       1.23.17-0                          kubernetes                       9.4 M
+
+
+Transaction Summary
+======================================================================================================================================
+Upgrade  1 Package
+
+
+Total download size: 9.4 M
+Downloading packages:
+Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
+52c389a4598f61bdf251c5ebcdf2475c32254e3ea85027e204ccc0356e7a1be1-kubeadm-1.23.17-0.x86_64.rpm                  | 9.4 MB  00:00:03     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Updating   : kubeadm-1.23.17-0.x86_64                                                                                           1/2 
+  Cleanup    : kubeadm-1.23.2-0.x86_64                                                                                            2/2 
+  Verifying  : kubeadm-1.23.17-0.x86_64                                                                                           1/2 
+  Verifying  : kubeadm-1.23.2-0.x86_64                                                                                            2/2 
+
+
+Updated:
+  kubeadm.x86_64 0:1.23.17-0                                                                                                          
+
+
+Complete!' 
+ 
+
+
+
+
+
+[root@masternode ~]# kubectl get node
+NAME                      STATUS   ROLES                  AGE   VERSION
+masternode.example.com    Ready    control-plane,master   31m   v1.23.2
+workernode1.example.com   Ready    <none>                 29m   v1.23.2
+workernode2.example.com   Ready    <none>                 29m   v1.23.2
+[root@masternode ~]# kubectl drain masternode.example.com 
+node/masternode.example.com cordoned
+error: unable to drain node "masternode.example.com" due to error:cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore): kube-system/calico-node-d6gn5, kube-system/kube-proxy-gdd74, continuing command...
+There are pending nodes to be drained:
+ masternode.example.com
+cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore): kube-system/calico-node-d6gn5, kube-system/kube-proxy-gdd74
+[root@masternode ~]# kubectl drain masternode.example.com  --ignore-daemonsets
+node/masternode.example.com already cordoned
+WARNING: ignoring DaemonSet-managed Pods: kube-system/calico-node-d6gn5, kube-system/kube-proxy-gdd74
+evicting pod kube-system/coredns-64897985d-sgx7w
+evicting pod kube-system/coredns-64897985d-h5kw7
+pod/coredns-64897985d-sgx7w evicted
+pod/coredns-64897985d-h5kw7 evicted
+node/masternode.example.com drained
+[root@masternode ~]# kubectl get nodes
+NAME                      STATUS                     ROLES                  AGE   VERSION
+masternode.example.com    Ready,SchedulingDisabled   control-plane,master   32m   v1.23.2
+workernode1.example.com   Ready                      <none>                 30m   v1.23.2
+workernode2.example.com   Ready                      <none>                 30m   v1.23.2
+[root@masternode ~]# kubectl get pods -A 
+NAMESPACE     NAME                                             READY   STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-85b5b5888d-jd7mr         1/1     Running   0          30m
+kube-system   calico-node-487bp                                1/1     Running   0          30m
+kube-system   calico-node-7rhh8                                1/1     Running   0          30m
+kube-system   calico-node-d6gn5                                1/1     Running   0          30m
+kube-system   coredns-64897985d-s8l8g                          1/1     Running   0          24s
+kube-system   coredns-64897985d-zxkcr                          1/1     Running   0          24s
+kube-system   etcd-masternode.example.com                      1/1     Running   6          32m
+kube-system   kube-apiserver-masternode.example.com            1/1     Running   0          32m
+kube-system   kube-controller-manager-masternode.example.com   1/1     Running   0          32m
+kube-system   kube-proxy-gdd74                                 1/1     Running   0          32m
+kube-system   kube-proxy-w2sql                                 1/1     Running   0          30m
+kube-system   kube-proxy-w944r                                 1/1     Running   0          30m
+kube-system   kube-scheduler-masternode.example.com            1/1     Running   0          32m
+[root@masternode ~]# kubectl get pods -A -o wide 
+NAMESPACE     NAME                                             READY   STATUS    RESTARTS   AGE   IP               NODE                      NOMINATED NODE   READINESS GATES
+kube-system   calico-kube-controllers-85b5b5888d-jd7mr         1/1     Running   0          30m   172.16.133.129   workernode1.example.com   <none>           <none>
+kube-system   calico-node-487bp                                1/1     Running   0          30m   192.168.29.201   workernode1.example.com   <none>           <none>
+kube-system   calico-node-7rhh8                                1/1     Running   0          30m   192.168.29.202   workernode2.example.com   <none>           <none>
+kube-system   calico-node-d6gn5                                1/1     Running   0          30m   192.168.29.200   masternode.example.com    <none>           <none>
+kube-system   coredns-64897985d-s8l8g                          1/1     Running   0          27s   172.16.14.67     workernode2.example.com   <none>           <none>
+kube-system   coredns-64897985d-zxkcr                          1/1     Running   0          27s   172.16.133.130   workernode1.example.com   <none>           <none>
+kube-system   etcd-masternode.example.com                      1/1     Running   6          32m   192.168.29.200   masternode.example.com    <none>           <none>
+kube-system   kube-apiserver-masternode.example.com            1/1     Running   0          32m   192.168.29.200   masternode.example.com    <none>           <none>
+kube-system   kube-controller-manager-masternode.example.com   1/1     Running   0          32m   192.168.29.200   masternode.example.com    <none>           <none>
+kube-system   kube-proxy-gdd74                                 1/1     Running   0          32m   192.168.29.200   masternode.example.com    <none>           <none>
+kube-system   kube-proxy-w2sql                                 1/1     Running   0          30m   192.168.29.202   workernode2.example.com   <none>           <none>
+kube-system   kube-proxy-w944r                                 1/1     Running   0          30m   192.168.29.201   workernode1.example.com   <none>           <none>
+kube-system   kube-scheduler-masternode.example.com            1/1     Running   0          32m   192.168.29.200   masternode.example.com    <none>           <none>
+[root@masternode ~]# kubectl get nodes
+NAME                      STATUS                     ROLES                  AGE   VERSION
+masternode.example.com    Ready,SchedulingDisabled   control-plane,master   32m   v1.23.2
+workernode1.example.com   Ready                      <none>                 31m   v1.23.2
+workernode2.example.com   Ready                      <none>                 31m   v1.23.2
+[root@masternode ~]# kubeadm version -o short
+v1.23.17
+[root@masternode ~]# yum install -y kubelet-1.23.17-0 kubectl-1.23.17-0 --disableexcludes=kubernetes
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirror.aktkn.sg
+ * extras: mirror.aktkn.sg
+ * updates: mirror.aktkn.sg
+Resolving Dependencies
+--> Running transaction check
+---> Package kubectl.x86_64 0:1.23.2-0 will be updated
+---> Package kubectl.x86_64 0:1.23.17-0 will be an update
+---> Package kubelet.x86_64 0:1.23.2-0 will be updated
+---> Package kubelet.x86_64 0:1.23.17-0 will be an update
+--> Processing Dependency: kubernetes-cni >= 1.1.1 for package: kubelet-1.23.17-0.x86_64
+--> Running transaction check
+---> Package kubernetes-cni.x86_64 0:0.8.7-0 will be updated
+---> Package kubernetes-cni.x86_64 0:1.2.0-0 will be an update
+--> Finished Dependency Resolution
+
+
+Dependencies Resolved
+
+
+======================================================================================================================================
+ Package                             Arch                        Version                        Repository                       Size
+======================================================================================================================================
+Updating:
+ kubectl                             x86_64                      1.23.17-0                      kubernetes                      9.8 M
+ kubelet                             x86_64                      1.23.17-0                      kubernetes                       21 M
+Updating for dependencies:
+ kubernetes-cni                      x86_64                      1.2.0-0                        kubernetes                       17 M
+
+
+Transaction Summary
+======================================================================================================================================
+Upgrade  2 Packages (+1 Dependent package)
+
+
+Total download size: 48 M
+Downloading packages:
+Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
+(1/3): cb2ed23fb25cc5b2f73ffc665c3b71e87bce012ec4cf7750e2246f1b48afd34e-kubectl-1.23.17-0.x86_64.rpm           | 9.8 MB  00:00:03     
+(2/3): 0f2a2afd740d476ad77c508847bad1f559afc2425816c1f2ce4432a62dfe0b9d-kubernetes-cni-1.2.0-0.x86_64.rpm      |  17 MB  00:00:01     
+(3/3): 552c4d4494c1de798baf4b52c0a27a3e9a63740900a76f30997210edbfcb7d99-kubelet-1.23.17-0.x86_64.rpm           |  21 MB  00:00:05     
+--------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                 8.0 MB/s |  48 MB  00:00:05     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Updating   : kubelet-1.23.17-0.x86_64                                                                                           1/6 
+  Updating   : kubernetes-cni-1.2.0-0.x86_64                                                                                      2/6 
+  Updating   : kubectl-1.23.17-0.x86_64                                                                                           3/6 
+  Cleanup    : kubelet-1.23.2-0.x86_64                                                                                            4/6 
+  Cleanup    : kubernetes-cni-0.8.7-0.x86_64                                                                                      5/6 
+  Cleanup    : kubectl-1.23.2-0.x86_64                                                                                            6/6 
+  Verifying  : kubernetes-cni-1.2.0-0.x86_64                                                                                      1/6 
+  Verifying  : kubelet-1.23.17-0.x86_64                                                                                           2/6 
+  Verifying  : kubectl-1.23.17-0.x86_64                                                                                           3/6 
+  Verifying  : kubernetes-cni-0.8.7-0.x86_64                                                                                      4/6 
+  Verifying  : kubectl-1.23.2-0.x86_64                                                                                            5/6 
+  Verifying  : kubelet-1.23.2-0.x86_64                                                                                            6/6 
+
+
+Updated:
+  kubectl.x86_64 0:1.23.17-0                                        kubelet.x86_64 0:1.23.17-0                                       
+
+
+Dependency Updated:
+  kubernetes-cni.x86_64 0:1.2.0-0                                                                                                     
+
+
+Complete!
+[root@masternode ~]# systemctl daemon-reload
+[root@masternode ~]# systemctl restart kubelet
+[root@masternode ~]# kubeadm upgrade plan 
+[upgrade/config] Making sure the configuration is correct:
+[upgrade/config] Reading configuration from the cluster...
+[upgrade/config] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
+[upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+[preflight] Running pre-flight checks.
+[upgrade] Running cluster health checks
+[upgrade] Fetching available versions to upgrade to
+[upgrade/versions] Cluster version: v1.23.17
+[upgrade/versions] kubeadm version: v1.23.17
+I0325 21:41:05.479475   37110 version.go:256] remote version is much newer: v1.26.3; falling back to: stable-1.23
+[upgrade/versions] Target version: v1.23.17
+[upgrade/versions] Latest version in the v1.23 series: v1.23.17
+
+
+[root@masternode ~]# kubeadm upgrade apply v1.23.17
+[upgrade/config] Making sure the configuration is correct:
+[upgrade/config] Reading configuration from the cluster...
+[upgrade/config] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
+[preflight] Running pre-flight checks.
+[upgrade] Running cluster health checks
+[upgrade/version] You have chosen to change the cluster version to "v1.23.17"
+[upgrade/versions] Cluster version: v1.23.17
+[upgrade/versions] kubeadm version: v1.23.17
+[upgrade/confirm] Are you sure you want to proceed with the upgrade? [y/N]: y
+[upgrade/prepull] Pulling images required for setting up a Kubernetes cluster
+[upgrade/prepull] This might take a minute or two, depending on the speed of your internet connection
+[upgrade/prepull] You can also perform this action in beforehand using 'kubeadm config images pull'
+[upgrade/apply] Upgrading your Static Pod-hosted control plane to version "v1.23.17"...
+Static pod: kube-apiserver-masternode.example.com hash: dd5a08506ef916bb8ecb7f0f4871bbad
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+[upgrade/etcd] Upgrading to TLS for etcd
+Static pod: etcd-masternode.example.com hash: 3102c76fbb647e32ba918aa4a8f5c7f9
+[upgrade/staticpods] Preparing for "etcd" upgrade
+[upgrade/staticpods] Renewing etcd-server certificate
+[upgrade/staticpods] Renewing etcd-peer certificate
+[upgrade/staticpods] Renewing etcd-healthcheck-client certificate
+[upgrade/staticpods] Moved new manifest to "/etc/kubernetes/manifests/etcd.yaml" and backed up old manifest to "/etc/kubernetes/tmp/kubeadm-backup-manifests-2023-03-25-21-41-54/etcd.yaml"
+[upgrade/staticpods] Waiting for the kubelet to restart the component
+[upgrade/staticpods] This might take a minute or longer depending on the component/version gap (timeout 5m0s)
+Static pod: etcd-masternode.example.com hash: 3102c76fbb647e32ba918aa4a8f5c7f9
+Static pod: etcd-masternode.example.com hash: 3102c76fbb647e32ba918aa4a8f5c7f9
+Static pod: etcd-masternode.example.com hash: 1a799184d432cabf75ce0db5052a46e0
+[apiclient] Found 1 Pods for label selector component=etcd
+[upgrade/staticpods] Component "etcd" upgraded successfully!
+[upgrade/etcd] Waiting for etcd to become available
+[upgrade/staticpods] Writing new Static Pod manifests to "/etc/kubernetes/tmp/kubeadm-upgraded-manifests1963023519"
+[upgrade/staticpods] Preparing for "kube-apiserver" upgrade
+[upgrade/staticpods] Renewing apiserver certificate
+[upgrade/staticpods] Renewing apiserver-kubelet-client certificate
+[upgrade/staticpods] Renewing front-proxy-client certificate
+[upgrade/staticpods] Renewing apiserver-etcd-client certificate
+[upgrade/staticpods] Moved new manifest to "/etc/kubernetes/manifests/kube-apiserver.yaml" and backed up old manifest to "/etc/kubernetes/tmp/kubeadm-backup-manifests-2023-03-25-21-41-54/kube-apiserver.yaml"
+[upgrade/staticpods] Waiting for the kubelet to restart the component
+[upgrade/staticpods] This might take a minute or longer depending on the component/version gap (timeout 5m0s)
+Static pod: kube-apiserver-masternode.example.com hash: dd5a08506ef916bb8ecb7f0f4871bbad
+Static pod: kube-apiserver-masternode.example.com hash: dd5a08506ef916bb8ecb7f0f4871bbad
+Static pod: kube-apiserver-masternode.example.com hash: a3e1ed5f65aebe0053ce74cce7c145ec
+[apiclient] Found 1 Pods for label selector component=kube-apiserver
+[upgrade/staticpods] Component "kube-apiserver" upgraded successfully!
+[upgrade/staticpods] Preparing for "kube-controller-manager" upgrade
+[upgrade/staticpods] Renewing controller-manager.conf certificate
+[upgrade/staticpods] Moved new manifest to "/etc/kubernetes/manifests/kube-controller-manager.yaml" and backed up old manifest to "/etc/kubernetes/tmp/kubeadm-backup-manifests-2023-03-25-21-41-54/kube-controller-manager.yaml"
+[upgrade/staticpods] Waiting for the kubelet to restart the component
+[upgrade/staticpods] This might take a minute or longer depending on the component/version gap (timeout 5m0s)
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 435d804c86bdb43c4e30468b1d4f88fa
+Static pod: kube-controller-manager-masternode.example.com hash: 698d8d65737478f3315f845c27ff400d
+[apiclient] Found 1 Pods for label selector component=kube-controller-manager
+[upgrade/staticpods] Component "kube-controller-manager" upgraded successfully!
+[upgrade/staticpods] Preparing for "kube-scheduler" upgrade
+[upgrade/staticpods] Renewing scheduler.conf certificate
+[upgrade/staticpods] Moved new manifest to "/etc/kubernetes/manifests/kube-scheduler.yaml" and backed up old manifest to "/etc/kubernetes/tmp/kubeadm-backup-manifests-2023-03-25-21-41-54/kube-scheduler.yaml"
+[upgrade/staticpods] Waiting for the kubelet to restart the component
+[upgrade/staticpods] This might take a minute or longer depending on the component/version gap (timeout 5m0s)
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: 16a82ff09e029b370c5232648600654f
+Static pod: kube-scheduler-masternode.example.com hash: eba19525bc7394f7ff9ce340ed12b614
+[apiclient] Found 1 Pods for label selector component=kube-scheduler
+[upgrade/staticpods] Component "kube-scheduler" upgraded successfully!
+[upgrade/postupgrade] Applying label node-role.kubernetes.io/control-plane='' to Nodes with label node-role.kubernetes.io/master='' (deprecated)
+[upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+[kubelet] Creating a ConfigMap "kubelet-config-1.23" in namespace kube-system with the configuration for the kubelets in the cluster
+NOTE: The "kubelet-config-1.23" naming of the kubelet ConfigMap is deprecated. Once the UnversionedKubeletConfigMap feature gate graduates to Beta the default name will become just "kubelet-config". Kubeadm upgrade will handle this transition transparently.
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to get nodes
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
+[bootstrap-token] configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token
+[bootstrap-token] configured RBAC rules to allow certificate rotation for all node client certificates in the cluster
+[addons] Applied essential addon: CoreDNS
+[addons] Applied essential addon: kube-proxy
+
+
+[upgrade/successful] SUCCESS! Your cluster was upgraded to "v1.23.17". Enjoy!
+
+s
+[root@masternode ~]#  systemctl daemon-reload
+ systemctl restart kubelet[root@masternode ~]#  systemctl restart kubelet
+[root@masternode ~]# kubectl uncordon masternode.example.com
+node/masternode.example.com uncordoned
+[root@masternode ~]# kubectl get nodes
+NAME                      STATUS   ROLES                  AGE   VERSION
+masternode.example.com    Ready    control-plane,master   38m   v1.23.17
+workernode1.example.com   Ready    <none>                 37m   v1.23.2
+workernode2.example.com   Ready    <none>                 37m   v1.23.2 
+
+
+
+
+Worker Node Upgrade 
+
+
+
+
+[root@workernode1 ~]# yum install -y kubeadm-1.23.17-0 --disableexcludes=kubernete
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirror.aktkn.sg
+ * extras: mirror.aktkn.sg
+ * updates: mirror.aktkn.sg
+Resolving Dependencies
+--> Running transaction check
+---> Package kubeadm.x86_64 0:1.23.2-0 will be updated
+---> Package kubeadm.x86_64 0:1.23.17-0 will be an update
+--> Finished Dependency Resolution
+
+
+Dependencies Resolved
+
+
+======================================================================================================================================
+ Package                       Arch                         Version                            Repository                        Size
+======================================================================================================================================
+Updating:
+ kubeadm                       x86_64                       1.23.17-0                          kubernetes                       9.4 M
+
+
+Transaction Summary
+======================================================================================================================================
+Upgrade  1 Package
+
+
+Total download size: 9.4 M
+Downloading packages:
+Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
+52c389a4598f61bdf251c5ebcdf2475c32254e3ea85027e204cc 0% [                                           ]  0.0 B/s |    0 B  --:--:-- ETA 
+52c389a4598f61bdf251c5ebcdf2475c32254e3ea85027e204ccc0356e7a1be1-kubeadm-1.23.17-0.x86_64.rpm                  | 9.4 MB  00:00:02     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Updating   : kubeadm-1.23.17-0.x86_64                                                                                           1/2 
+  Cleanup    : kubeadm-1.23.2-0.x86_64                                                                                            2/2 
+  Verifying  : kubeadm-1.23.17-0.x86_64                                                                                           1/2 
+  Verifying  : kubeadm-1.23.2-0.x86_64                                                                                            2/2 
+
+
+Updated:
+  kubeadm.x86_64 0:1.23.17-0                                                                                                          
+
+
+Complete!
+
+
+[root@masternode ~]# kubectl get nodes
+NAME                      STATUS                     ROLES                  AGE   VERSION
+masternode.example.com    Ready                      control-plane,master   42m   v1.23.17
+workernode1.example.com   Ready                      <none>                 40m   v1.23.2
+workernode2.example.com   Ready                      <none>                 40m   v1.23.2
+[root@workernode1 ~]# 
+[root@masternode ~]# kubectl drain workernode1.example.com
+
+
+
+
+[root@masternode ~]# kubectl get nodes
+NAME                      STATUS                     ROLES                  AGE   VERSION
+masternode.example.com    Ready                      control-plane,master   42m   v1.23.17
+workernode1.example.com   Ready,SchedulingDisabled   <none>                 40m   v1.23.17
+workernode2.example.com   Ready                      <none>                 40m   v1.23.2
+
+
+
+
+[root@workernode1 ~]# kubeadm upgrade node
+[upgrade] Reading configuration from the cluster...
+[upgrade] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
+[preflight] Running pre-flight checks
+[preflight] Skipping prepull. Not a control plane node.
+[upgrade] Skipping phase. Not a control plane node.
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[upgrade] The configuration for this node was successfully updated!
+[upgrade] Now you should go ahead and upgrade the kubelet package using your package manager.
+
+
+
+
+
+
+
+
+[root@workernode1 ~]# yum install -y kubelet-1.23.17-0 kubectl-1.23.17-0 --disableexcludes=kubernetes
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirror.aktkn.sg
+ * extras: mirror.aktkn.sg
+ * updates: mirror.aktkn.sg
+Resolving Dependencies
+--> Running transaction check
+---> Package kubectl.x86_64 0:1.23.2-0 will be updated
+---> Package kubectl.x86_64 0:1.23.17-0 will be an update
+---> Package kubelet.x86_64 0:1.23.2-0 will be updated
+---> Package kubelet.x86_64 0:1.23.17-0 will be an update
+--> Processing Dependency: kubernetes-cni >= 1.1.1 for package: kubelet-1.23.17-0.x86_64
+--> Running transaction check
+---> Package kubernetes-cni.x86_64 0:0.8.7-0 will be updated
+---> Package kubernetes-cni.x86_64 0:1.2.0-0 will be an update
+--> Finished Dependency Resolution
+
+
+Dependencies Resolved
+
+
+======================================================================================================================================
+ Package                             Arch                        Version                        Repository                       Size
+======================================================================================================================================
+Updating:
+ kubectl                             x86_64                      1.23.17-0                      kubernetes                      9.8 M
+ kubelet                             x86_64                      1.23.17-0                      kubernetes                       21 M
+Updating for dependencies:
+ kubernetes-cni                      x86_64                      1.2.0-0                        kubernetes                       17 M
+
+
+Transaction Summary
+======================================================================================================================================
+Upgrade  2 Packages (+1 Dependent package)
+
+
+Total download size: 48 M
+Downloading packages:
+Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
+(1/3): cb2ed23fb25cc5b2f73ffc665c3b71e87bce012ec4cf7750e2246f1b48afd34e-kubectl-1.23.17-0.x86_64.rpm           | 9.8 MB  00:00:01     
+(2/3): 552c4d4494c1de798baf4b52c0a27a3e9a63740900a76f30997210edbfcb7d99-kubelet-1.23.17-0.x86_64.rpm           |  21 MB  00:00:02     
+(3/3): 0f2a2afd740d476ad77c508847bad1f559afc2425816c1f2ce4432a62dfe0b9d-kubernetes-cni-1.2.0-0.x86_64.rpm      |  17 MB  00:00:01     
+--------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                  14 MB/s |  48 MB  00:00:03     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Updating   : kubelet-1.23.17-0.x86_64                                                                                           1/6 
+  Updating   : kubernetes-cni-1.2.0-0.x86_64                                                                                      2/6 
+  Updating   : kubectl-1.23.17-0.x86_64                                                                                           3/6 
+  Cleanup    : kubelet-1.23.2-0.x86_64                                                                                            4/6 
+  Cleanup    : kubernetes-cni-0.8.7-0.x86_64                                                                                      5/6 
+  Cleanup    : kubectl-1.23.2-0.x86_64                                                                                            6/6 
+  Verifying  : kubernetes-cni-1.2.0-0.x86_64                                                                                      1/6 
+  Verifying  : kubelet-1.23.17-0.x86_64                                                                                           2/6 
+  Verifying  : kubectl-1.23.17-0.x86_64                                                                                           3/6 
+  Verifying  : kubernetes-cni-0.8.7-0.x86_64                                                                                      4/6 
+  Verifying  : kubectl-1.23.2-0.x86_64                                                                                            5/6 
+  Verifying  : kubelet-1.23.2-0.x86_64                                                                                            6/6 
+
+
+Updated:
+  kubectl.x86_64 0:1.23.17-0                                        kubelet.x86_64 0:1.23.17-0                                       
+
+
+Dependency Updated:
+  kubernetes-cni.x86_64 0:1.2.0-0                                                                                                     
+
+
+Complete!
+
+
+[root@workernode1 ~]# systemctl daemon-reload
+
+
+[root@workernode1 ~]#  systemctl daemon-reload
+[root@workernode1 ~]# systemctl restart kubelet
+
+
+
+
+[root@masternode ~]# kubectl get nodes
+NAME                      STATUS                     ROLES                  AGE   VERSION
+masternode.example.com    Ready                      control-plane,master   42m   v1.23.17
+workernode1.example.com   Ready,SchedulingDisabled   <none>                 40m   v1.23.17
+workernode2.example.com   Ready                      <none>                 40m   v1.23.2
+
+
+[root@masternode ~]# kubectl uncordon workernode1.example.com
+node/workernode1.example.com uncordoned
+[root@masternode ~]# kubectl get nodes
+NAME                      STATUS   ROLES                  AGE   VERSION
+masternode.example.com    Ready    control-plane,master   44m   v1.23.17
+workernode1.example.com   Ready    <none>                 42m   v1.23.17
+workernode2.example.com   Ready    <none>                 42m   v1.23.17 s
