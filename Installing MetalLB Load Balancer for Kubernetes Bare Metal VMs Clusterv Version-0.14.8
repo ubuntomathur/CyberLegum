@@ -1,0 +1,124 @@
+[root@master metallb]# kubectl get nodes
+NAME                  STATUS   ROLES           AGE   VERSION
+master.example.com    Ready    control-plane   10d   v1.31.2
+worker1.example.com   Ready    <none>          10d   v1.31.2
+worker2.example.com   Ready    <none>          10d   v1.31.2
+worker3.example.com   Ready    <none>          10d   v1.31.2
+[root@master metallb]#
+
+# see what changes would be made, returns nonzero returncode if different
+kubectl get configmap kube-proxy -n kube-system -o yaml | \
+sed -e "s/strictARP: false/strictARP: true/" | \
+kubectl diff -f - -n kube-system
+
+# actually apply the changes, returns nonzero returncode on errors only
+kubectl get configmap kube-proxy -n kube-system -o yaml | \
+sed -e "s/strictARP: false/strictARP: true/" | \
+kubectl apply -f - -n kube-system
+
+
+Step1://- Check the Enable strict ARP mode ||  --->strictARP: true
+kubectl edit configmap -n kube-system kube-proxy
+
+ ipvs:
+      excludeCIDRs: null
+      minSyncPeriod: 0s
+      scheduler: ""
+      strictARP: true
+      syncPeriod: 0s
+      tcpFinTimeout: 0s
+      tcpTimeout: 0s
+      udpTimeout: 0s
+
+Step2:// Installation by manifest
+[root@master metallb]# kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
+namespace/metallb-system created
+customresourcedefinition.apiextensions.k8s.io/bfdprofiles.metallb.io created
+customresourcedefinition.apiextensions.k8s.io/bgpadvertisements.metallb.io created
+customresourcedefinition.apiextensions.k8s.io/bgppeers.metallb.io created
+customresourcedefinition.apiextensions.k8s.io/communities.metallb.io created
+customresourcedefinition.apiextensions.k8s.io/ipaddresspools.metallb.io created
+customresourcedefinition.apiextensions.k8s.io/l2advertisements.metallb.io created
+customresourcedefinition.apiextensions.k8s.io/servicel2statuses.metallb.io created
+serviceaccount/controller created
+serviceaccount/speaker created
+role.rbac.authorization.k8s.io/controller created
+role.rbac.authorization.k8s.io/pod-lister created
+clusterrole.rbac.authorization.k8s.io/metallb-system:controller created
+clusterrole.rbac.authorization.k8s.io/metallb-system:speaker created
+rolebinding.rbac.authorization.k8s.io/controller created
+rolebinding.rbac.authorization.k8s.io/pod-lister created
+clusterrolebinding.rbac.authorization.k8s.io/metallb-system:controller created
+clusterrolebinding.rbac.authorization.k8s.io/metallb-system:speaker created
+configmap/metallb-excludel2 created
+secret/metallb-webhook-cert created
+service/metallb-webhook-service created
+deployment.apps/controller created
+daemonset.apps/speaker created
+validatingwebhookconfiguration.admissionregistration.k8s.io/metallb-webhook-configuration created
+
+Step://3 Layer 2 Configuration for to advertise the IP Pool
+[root@master metallb]# kubectl create -f metallb-ipadd-pool.yaml
+ipaddresspool.metallb.io/first-pool created
+
+[root@master metallb]# cat metallb-ipadd-pool.yaml
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: first-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.29.240-192.168.29.250
+[root@master metallb]#
+
+Steps 4:// Advertise the IP Address Pool
+[root@master metallb]# kubectl apply -f metallb-pool-advertise.yaml
+l2advertisement.metallb.io/example created
+
+[root@master metallb]# cat metallb-pool-advertise.yaml
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: example
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - first-pool
+[root@master metallb]#
+
+Step:5:// Last check the loadBalancer 
+[root@master metallb]# kubectl create deployment nginx-web-server --image=nginx
+deployment.apps/nginx-web-server created
+[root@master metallb]# kubectl expose deployment nginx-web-server --port=80 --target-port=80 --type=LoadBalancer
+service/nginx-web-server exposed
+[root@master metallb]# kubectl get svc
+NAME               TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)        AGE
+kubernetes         ClusterIP      10.96.0.1        <none>           443/TCP        10d
+nginx              LoadBalancer   10.109.254.115   192.168.29.240   80:30937/TCP   3h3m
+nginx-web-server   LoadBalancer   10.102.230.193   192.168.29.241   80:30490/TCP   11m 
+[root@master metallb]# curl 192.168.29.240
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+[root@master metallb]# 
