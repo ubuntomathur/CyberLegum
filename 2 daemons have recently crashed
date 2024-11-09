@@ -1,0 +1,83 @@
+[root@master ~]# kubectl exec -it rook-ceph-tools-68bf47bc65-mgvpv -n rook-ceph -- /bin/bash
+bash-5.1$ ceph -s
+  cluster:
+    id:     249cabb5-1159-40b3-b0cf-7a639eb1b990
+    health: HEALTH_WARN
+            2 daemons have recently crashed
+
+  services:
+    mon: 3 daemons, quorum a,c,b (age 14m)
+    mgr: b(active, since 14m), standbys: a
+    osd: 3 osds: 3 up (since 14m), 3 in (since 30h)
+
+  data:
+    pools:   1 pools, 1 pgs
+    objects: 2 objects, 449 KiB
+    usage:   86 MiB used, 600 GiB / 600 GiB avail
+    pgs:     1 active+clean
+
+bash-5.1$
+bash-5.1$ ceph crash ls
+ID                                                                ENTITY  NEW
+2024-11-08T09:44:41.914519Z_9c9aa15e-a9ee-47a9-b468-416895e302b8  mon.a    *
+2024-11-09T11:33:07.742660Z_2942ff62-be28-4f08-90a3-75dc5a0fd2b0  mon.a    *
+bash-5.1$
+
+
+bash-5.1$ ceph crash rm 2024-11-08T09:44:41.914519Z_9c9aa15e-a9ee-47a9-b468-416895e302b8
+bash-5.1$ ceph -s
+  cluster:
+    id:     249cabb5-1159-40b3-b0cf-7a639eb1b990
+    health: HEALTH_WARN
+            1 daemons have recently crashed
+
+  services:
+    mon: 3 daemons, quorum a,c,b (age 80m)
+    mgr: b(active, since 80m), standbys: a
+    osd: 3 osds: 3 up (since 80m), 3 in (since 31h)
+
+  data:
+    pools:   1 pools, 1 pgs
+    objects: 2 objects, 449 KiB
+    usage:   86 MiB used, 600 GiB / 600 GiB avail
+    pgs:     1 active+clean
+
+bash-5.1$ ceph crash ls
+ID                                                                ENTITY  NEW
+2024-11-09T11:33:07.742660Z_2942ff62-be28-4f08-90a3-75dc5a0fd2b0  mon.a    *
+bash-5.1$ ceph crash rm 07.742660Z_2942ff62-be28-4f08-90a3-75dc5a0fd2b0
+bash-5.1$ ceph -s
+  cluster:
+    id:     249cabb5-1159-40b3-b0cf-7a639eb1b990
+    health: HEALTH_WARN
+            1 daemons have recently crashed
+
+  services:
+    mon: 3 daemons, quorum a,c,b (age 83m)
+    mgr: b(active, since 83m), standbys: a
+    osd: 3 osds: 3 up (since 82m), 3 in (since 31h)
+
+  data:
+    pools:   1 pools, 1 pgs
+    objects: 2 objects, 449 KiB
+    usage:   86 MiB used, 600 GiB / 600 GiB avail
+    pgs:     1 active+clean
+
+bash-5.1$ ceph crash rm 2024-11-09T11:33:07.742660Z_2942ff62-be28-4f08-90a3-75dc5a0fd2b0
+bash-5.1$ ceph -s
+  cluster:
+    id:     249cabb5-1159-40b3-b0cf-7a639eb1b990
+    health: HEALTH_OK
+
+  services:
+    mon: 3 daemons, quorum a,c,b (age 84m)
+    mgr: b(active, since 84m), standbys: a
+    osd: 3 osds: 3 up (since 84m), 3 in (since 31h)
+
+  data:
+    pools:   1 pools, 1 pgs
+    objects: 2 objects, 449 KiB
+    usage:   86 MiB used, 600 GiB / 600 GiB avail
+    pgs:     1 active+clean
+
+bash-5.1$
