@@ -1,0 +1,108 @@
+[root@master ~]# crictl ps
+WARN[0000] runtime connect using default endpoints: [unix:///run/containerd/containerd.sock unix:///run/crio/crio.sock unix:///var/run/cri-dockerd.sock]. As the default settings are now deprecated, you should set the endpoint instead.
+WARN[0000] image connect using default endpoints: [unix:///run/containerd/containerd.sock unix:///run/crio/crio.sock unix:///var/run/cri-dockerd.sock]. As the default settings are now deprecated, you should set the endpoint instead.
+
+
+
+
+[root@master ~]# crictl ps
+WARN[0000] runtime connect using default endpoints: [unix:///run/containerd/containerd.sock unix:///run/crio/crio.sock unix:///var/run/cri-dockerd.sock]. As the default settings are now deprecated, you should set the endpoint instead.
+WARN[0000] image connect using default endpoints: [unix:///run/containerd/containerd.sock unix:///run/crio/crio.sock unix:///var/run/cri-dockerd.sock]. As the default settings are now deprecated, you should set the endpoint instead.
+CONTAINER           IMAGE               CREATED             STATE               NAME                      ATTEMPT             POD ID              POD
+8339dc454f707       50d3d2d1712d7       About an hour ago   Running             speaker                   2                   f95752f56a8a7       speaker-fhszg
+83c0fbaebacef       c69fa2e9cbf5f       About an hour ago   Running             coredns                   7                   71a9f566cb5dc       coredns-7c65d6cfc9-hccp7
+2ff86adaac381       c69fa2e9cbf5f       About an hour ago   Running             coredns                   7                   955d37d73b0d6       coredns-7c65d6cfc9-kbfzc
+ef305be6a768f       fc502385b966c       About an hour ago   Running             virt-controller           10                  b0ea6599be222       virt-controller-54ffc5877b-qhdf6
+6f2c712b992a9       f3bc59d46b56d       About an hour ago   Running             calico-node               7                   8ec54fc89b804       calico-node-tn2wp
+3bcad121a3b6a       de37f0a2c14bf       About an hour ago   Running             virt-api                  7                   8e51170382f6d       virt-api-8fcf7f45b-j7mxt
+3802a1186cec4       de37f0a2c14bf       About an hour ago   Running             virt-api                  7                   d7a7242a29c40       virt-api-8fcf7f45b-89vmr
+0dc251fe091d2       fc502385b966c       About an hour ago   Running             virt-controller           7                   bd32445d1919a       virt-controller-54ffc5877b-jqhpp
+eac393b9fb78f       505d571f5fd56       About an hour ago   Running             kube-proxy                7                   aece86e0d91eb       kube-proxy-fcmdt
+1f373d520f7c8       847c7bc1a5418       About an hour ago   Running             kube-scheduler            10                  68e8a6199d88e       kube-scheduler-master.example.com
+5a2f9d505e586       0486b6c53a1b5       About an hour ago   Running             kube-controller-manager   10                  8cbd71b2ee642       kube-controller-manager-master.example.com
+2621fe3a906ff       2e96e5913fc06       About an hour ago   Running             etcd                      8                   f14d0e6bb3fb8       etcd-master.example.com
+d48088509b9b1       9499c9960544e       About an hour ago   Running             kube-apiserver            10                  979bb8d0bd110       kube-apiserver-master.example.com
+
+
+
+Solution :--
+ sudo crictl config --set runtime-endpoint=unix:///run/containerd/containerd.sock --set image-endpoint=unix:///run/containerd/containerd.sock
+[root@master ~]# sudo crictl config --set runtime-endpoint=unix:///run/containerd/containerd.sock --set image-endpoint=unix:///run/containerd/containerd.sock
+[root@master ~]# crictl ps -a
+CONTAINER           IMAGE               CREATED             STATE               NAME                      ATTEMPT             POD ID              POD
+8339dc454f707       50d3d2d1712d7       2 hours ago         Running             speaker                   2                   f95752f56a8a7       speaker-fhszg
+83c0fbaebacef       c69fa2e9cbf5f       2 hours ago         Running             coredns                   7                   71a9f566cb5dc       coredns-7c65d6cfc9-hccp7
+2ff86adaac381       c69fa2e9cbf5f       2 hours ago         Running             coredns                   7                   955d37d73b0d6       coredns-7c65d6cfc9-kbfzc
+ef305be6a768f       fc502385b966c       2 hours ago         Running             virt-controller           10                  b0ea6599be222       virt-controller-54ffc5877b-qhdf6
+6f2c712b992a9       f3bc59d46b56d       2 hours ago         Running             calico-node               7                   8ec54fc89b804       calico-node-tn2wp
+259671fb758a4       f3bc59d46b56d       2 hours ago         Exited              mount-bpffs               0                   8ec54fc89b804       calico-node-tn2wp
+3bcad121a3b6a       de37f0a2c14bf       2 hours ago         Running             virt-api                  7                   8e51170382f6d       virt-api-8fcf7f45b-j7mxt
+3802a1186cec4       de37f0a2c14bf       2 hours ago         Running             virt-api                  7                   d7a7242a29c40       virt-api-8fcf7f45b-89vmr
+0dc251fe091d2       fc502385b966c       2 hours ago         Running             virt-controller           7                   bd32445d1919a       virt-controller-54ffc5877b-jqhpp
+12cb97410f0aa       8db78ebb3152c       2 hours ago         Exited              install-cni               0                   8ec54fc89b804       calico-node-tn2wp
+a879789b0ffa5       50d3d2d1712d7       2 hours ago         Exited              speaker                   1                   f95752f56a8a7       speaker-fhszg
+eac393b9fb78f       505d571f5fd56       2 hours ago         Running             kube-proxy                7                   aece86e0d91eb       kube-proxy-fcmdt
+b0ba3993f0c86       8db78ebb3152c       2 hours ago         Exited              upgrade-ipam              5                   8ec54fc89b804       calico-node-tn2wp
+1f373d520f7c8       847c7bc1a5418       2 hours ago         Running             kube-scheduler            10                  68e8a6199d88e       kube-scheduler-master.example.com
+5a2f9d505e586       0486b6c53a1b5       2 hours ago         Running             kube-controller-manager   10                  8cbd71b2ee642       kube-controller-manager-master.example.com
+2621fe3a906ff       2e96e5913fc06       2 hours ago         Running             etcd                      8                   f14d0e6bb3fb8       etcd-master.example.com
+d48088509b9b1       9499c9960544e       2 hours ago         Running             kube-apiserver            10                  979bb8d0bd110       kube-apiserver-master.example.com
+e8b96128724d9       fc502385b966c       5 hours ago         Exited              virt-controller           9                   d62d8eb8a6ce7       virt-controller-54ffc5877b-qhdf6
+7385e71144e01       f3bc59d46b56d       7 hours ago         Exited              calico-node               6                   1fdb819ea7506       calico-node-tn2wp
+8b7b4f4756bf0       c69fa2e9cbf5f       7 hours ago         Exited              coredns                   6                   1b60ec25da144       coredns-7c65d6cfc9-hccp7
+198ede6639a28       c69fa2e9cbf5f       7 hours ago         Exited              coredns                   6                   4cbd38815911b       coredns-7c65d6cfc9-kbfzc
+a94b51d9f3322       fc502385b966c       7 hours ago         Exited              virt-controller           6                   523be6c63f3ba       virt-controller-54ffc5877b-jqhpp
+bf3906061fd33       de37f0a2c14bf       7 hours ago         Exited              virt-api                  6                   7adbca2d5e3c3       virt-api-8fcf7f45b-89vmr
+6cf9004f5137a       de37f0a2c14bf       7 hours ago         Exited              virt-api                  6                   30aa9efa022ae       virt-api-8fcf7f45b-j7mxt
+c00edc66e97c1       505d571f5fd56       7 hours ago         Exited              kube-proxy                6                   1b5c3a8cfba6e       kube-proxy-fcmdt
+6f704776cccf1       2e96e5913fc06       7 hours ago         Exited              etcd                      7                   681c910d6f1d6       etcd-master.example.com
+983b3101b0e92       0486b6c53a1b5       7 hours ago         Exited              kube-controller-manager   9                   c5d11b6485862       kube-controller-manager-master.example.com
+ba1db89ecbe38       9499c9960544e       7 hours ago         Exited              kube-apiserver            9                   144bc1a375997       kube-apiserver-master.example.com
+e08da171868e0       847c7bc1a5418       7 hours ago         Exited              kube-scheduler            9                   499ce72873b12       kube-scheduler-master.example.com
+[root@master ~]# crictl ps
+CONTAINER           IMAGE               CREATED             STATE               NAME                      ATTEMPT             POD ID              POD
+8339dc454f707       50d3d2d1712d7       2 hours ago         Running             speaker                   2                   f95752f56a8a7       speaker-fhszg
+83c0fbaebacef       c69fa2e9cbf5f       2 hours ago         Running             coredns                   7                   71a9f566cb5dc       coredns-7c65d6cfc9-hccp7
+2ff86adaac381       c69fa2e9cbf5f       2 hours ago         Running             coredns                   7                   955d37d73b0d6       coredns-7c65d6cfc9-kbfzc
+ef305be6a768f       fc502385b966c       2 hours ago         Running             virt-controller           10                  b0ea6599be222       virt-controller-54ffc5877b-qhdf6
+6f2c712b992a9       f3bc59d46b56d       2 hours ago         Running             calico-node               7                   8ec54fc89b804       calico-node-tn2wp
+3bcad121a3b6a       de37f0a2c14bf       2 hours ago         Running             virt-api                  7                   8e51170382f6d       virt-api-8fcf7f45b-j7mxt
+3802a1186cec4       de37f0a2c14bf       2 hours ago         Running             virt-api                  7                   d7a7242a29c40       virt-api-8fcf7f45b-89vmr
+0dc251fe091d2       fc502385b966c       2 hours ago         Running             virt-controller           7                   bd32445d1919a       virt-controller-54ffc5877b-jqhpp
+eac393b9fb78f       505d571f5fd56       2 hours ago         Running             kube-proxy                7                   aece86e0d91eb       kube-proxy-fcmdt
+1f373d520f7c8       847c7bc1a5418       2 hours ago         Running             kube-scheduler            10                  68e8a6199d88e       kube-scheduler-master.example.com
+5a2f9d505e586       0486b6c53a1b5       2 hours ago         Running             kube-controller-manager   10                  8cbd71b2ee642       kube-controller-manager-master.example.com
+2621fe3a906ff       2e96e5913fc06       2 hours ago         Running             etcd                      8                   f14d0e6bb3fb8       etcd-master.example.com
+d48088509b9b1       9499c9960544e       2 hours ago         Running             kube-apiserver            10                  979bb8d0bd110       kube-apiserver-master.example.com
+[root@master ~]# crictl ps -a
+CONTAINER           IMAGE               CREATED             STATE               NAME                      ATTEMPT             POD ID              POD
+8339dc454f707       50d3d2d1712d7       2 hours ago         Running             speaker                   2                   f95752f56a8a7       speaker-fhszg
+83c0fbaebacef       c69fa2e9cbf5f       2 hours ago         Running             coredns                   7                   71a9f566cb5dc       coredns-7c65d6cfc9-hccp7
+2ff86adaac381       c69fa2e9cbf5f       2 hours ago         Running             coredns                   7                   955d37d73b0d6       coredns-7c65d6cfc9-kbfzc
+ef305be6a768f       fc502385b966c       2 hours ago         Running             virt-controller           10                  b0ea6599be222       virt-controller-54ffc5877b-qhdf6
+6f2c712b992a9       f3bc59d46b56d       2 hours ago         Running             calico-node               7                   8ec54fc89b804       calico-node-tn2wp
+259671fb758a4       f3bc59d46b56d       2 hours ago         Exited              mount-bpffs               0                   8ec54fc89b804       calico-node-tn2wp
+3bcad121a3b6a       de37f0a2c14bf       2 hours ago         Running             virt-api                  7                   8e51170382f6d       virt-api-8fcf7f45b-j7mxt
+3802a1186cec4       de37f0a2c14bf       2 hours ago         Running             virt-api                  7                   d7a7242a29c40       virt-api-8fcf7f45b-89vmr
+0dc251fe091d2       fc502385b966c       2 hours ago         Running             virt-controller           7                   bd32445d1919a       virt-controller-54ffc5877b-jqhpp
+12cb97410f0aa       8db78ebb3152c       2 hours ago         Exited              install-cni               0                   8ec54fc89b804       calico-node-tn2wp
+a879789b0ffa5       50d3d2d1712d7       2 hours ago         Exited              speaker                   1                   f95752f56a8a7       speaker-fhszg
+eac393b9fb78f       505d571f5fd56       2 hours ago         Running             kube-proxy                7                   aece86e0d91eb       kube-proxy-fcmdt
+b0ba3993f0c86       8db78ebb3152c       2 hours ago         Exited              upgrade-ipam              5                   8ec54fc89b804       calico-node-tn2wp
+1f373d520f7c8       847c7bc1a5418       2 hours ago         Running             kube-scheduler            10                  68e8a6199d88e       kube-scheduler-master.example.com
+5a2f9d505e586       0486b6c53a1b5       2 hours ago         Running             kube-controller-manager   10                  8cbd71b2ee642       kube-controller-manager-master.example.com
+2621fe3a906ff       2e96e5913fc06       2 hours ago         Running             etcd                      8                   f14d0e6bb3fb8       etcd-master.example.com
+d48088509b9b1       9499c9960544e       2 hours ago         Running             kube-apiserver            10                  979bb8d0bd110       kube-apiserver-master.example.com
+e8b96128724d9       fc502385b966c       5 hours ago         Exited              virt-controller           9                   d62d8eb8a6ce7       virt-controller-54ffc5877b-qhdf6
+7385e71144e01       f3bc59d46b56d       7 hours ago         Exited              calico-node               6                   1fdb819ea7506       calico-node-tn2wp
+8b7b4f4756bf0       c69fa2e9cbf5f       7 hours ago         Exited              coredns                   6                   1b60ec25da144       coredns-7c65d6cfc9-hccp7
+198ede6639a28       c69fa2e9cbf5f       7 hours ago         Exited              coredns                   6                   4cbd38815911b       coredns-7c65d6cfc9-kbfzc
+a94b51d9f3322       fc502385b966c       7 hours ago         Exited              virt-controller           6                   523be6c63f3ba       virt-controller-54ffc5877b-jqhpp
+bf3906061fd33       de37f0a2c14bf       7 hours ago         Exited              virt-api                  6                   7adbca2d5e3c3       virt-api-8fcf7f45b-89vmr
+6cf9004f5137a       de37f0a2c14bf       7 hours ago         Exited              virt-api                  6                   30aa9efa022ae       virt-api-8fcf7f45b-j7mxt
+c00edc66e97c1       505d571f5fd56       7 hours ago         Exited              kube-proxy                6                   1b5c3a8cfba6e       kube-proxy-fcmdt
+6f704776cccf1       2e96e5913fc06       7 hours ago         Exited              etcd                      7                   681c910d6f1d6       etcd-master.example.com
+983b3101b0e92       0486b6c53a1b5       7 hours ago         Exited              kube-controller-manager   9                   c5d11b6485862       kube-controller-manager-master.example.com
+ba1db89ecbe38       9499c9960544e       7 hours ago         Exited              kube-apiserver            9                   144bc1a375997       kube-apiserver-master.example.com
+e08da171868e0       847c7bc1a5418       7 hours ago         Exited              kube-scheduler            9                   499ce72873b12       kube-scheduler-master.example.com
+[root@master ~]#
