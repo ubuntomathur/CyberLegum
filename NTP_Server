@@ -1,0 +1,333 @@
+# dnf install chrony
+# systemctl status chronyd.service
+○ chronyd.service - NTP client/server
+Loaded: loaded (/usr/lib/systemd/system/chronyd.service)
+Active: inactive (dead) since Sat 2022-08-06 22:00:00 EDT; 4s ago
+Docs: man:chronyd(8)
+man:chrony.conf(5)
+Process: 757 ExecStart=/usr/sbin/chronyd $OPTIONS (code=exited, status=0/SUCCESS)
+Main PID: 764 (code=exited, status=0/SUCCESS)
+CPU: 121ms
+
+# vim /etc/chrony.conf
+
+
+# Use public servers from the pool.ntp.org project.
+# Please consider joining the pool (https://www.pool.ntp.org/join.html).
+# pool 2.rhel.pool.ntp.org iburst
+
+
+# Allow NTP client access from local network.
+allow 192.168.4.0/24
+Uncomment the local stratum entry. This allows your server to act as a time source. For the stratum setting, change its value to 3. The stratum hierachy ranges from 1 to 15 with 1 being the best or most reliable time source. Therefore, we are setting our time server to 3 because it’s a local setup for testing and learning purposes.
+
+# Serve time even if not synchronized to a time source.
+local stratum 3
+
+
+
+
+Open the configuration file for edit
+sudo vi /etc/chrony.conf
+Comment out any servers you do not wish to use by prefixing the line with a #
+#server 0.rhel.pool.ntp.org iburst
+#server 1.rhel.pool.ntp.org iburst
+#server 2.rhel.pool.ntp.org iburst
+#server 3.rhel.pool.ntp.org iburst
+Below the last commented out server, please add your desired NTP servers. For example:
+server 0.au.pool.ntp.org iburst
+server 1.au.pool.ntp.org iburst
+Save the file and exit.
+As Firewalld is running by default, need to allow NTP service:
+sudo firewall-cmd --add-service=ntp --permanent
+sudo firewall-cmd --reload
+If the firewall is not running, use the commands:
+sudo systemctl status firewalld
+sudo systemctl start firewalld
+Restart the chrony service for the changes to take effect:
+sudo systemctl restart chronyd
+Verify the new NTP servers is applied for chronyd:
+sudo chronyc sources
+Check if the system clock is synchronized:
+sudo chronyc tracking
+If you need to adjust the system clock manually, run command:
+sudo chronyc makestep
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[root@localhost ~]# dnf install chrony -y
+Updating Subscription Management repositories.
+Last metadata expiration check: 0:57:03 ago on Thursday 14 November 2024 05:28:15 PM.
+Package chrony-4.5-1.el9.x86_64 is already installed.
+Dependencies resolved.
+=======================================================================================================================================================
+ Package                      Architecture                 Version                           Repository                                           Size
+=======================================================================================================================================================
+Upgrading:
+ chrony                       x86_64                       4.5-3.el9                         rhel-9-for-x86_64-baseos-rpms                       342 k
+
+Transaction Summary
+=======================================================================================================================================================
+Upgrade  1 Package
+
+Total download size: 342 k
+Downloading Packages:
+chrony-4.5-3.el9.x86_64.rpm                                                                                            279 kB/s | 342 kB     00:01
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                  279 kB/s | 342 kB     00:01
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                               1/1
+  Running scriptlet: chrony-4.5-3.el9.x86_64                                                                                                       1/2
+  Upgrading        : chrony-4.5-3.el9.x86_64                                                                                                       1/2
+  Running scriptlet: chrony-4.5-3.el9.x86_64                                                                                                       1/2
+  Running scriptlet: chrony-4.5-1.el9.x86_64                                                                                                       2/2
+  Cleanup          : chrony-4.5-1.el9.x86_64                                                                                                       2/2
+  Running scriptlet: chrony-4.5-1.el9.x86_64                                                                                                       2/2
+  Verifying        : chrony-4.5-3.el9.x86_64                                                                                                       1/2
+  Verifying        : chrony-4.5-1.el9.x86_64                                                                                                       2/2
+Installed products updated.
+
+Upgraded:
+  chrony-4.5-3.el9.x86_64
+
+Complete!
+[root@localhost ~]# timedatectl
+               Local time: Thu 2024-11-14 18:26:46 IST
+           Universal time: Thu 2024-11-14 12:56:46 UTC
+                 RTC time: Thu 2024-11-14 12:56:46
+                Time zone: Asia/Kolkata (IST, +0530)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+[root@localhost ~]# systemctl enable  chronyd
+[root@localhost ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.32.130/24
+ens192           UP             192.168.29.60/24 2405:201:4019:ca47:20c:29ff:feaf:36d1/64 fe80::20c:29ff:feaf:36d1/64
+[root@localhost ~]# nmtui
+[root@localhost ~]# systemctl restart NetworkManager
+[root@localhost ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.32.130/24
+ens192           UP             192.168.29.60/24 192.168.22.1/24
+[root@localhost ~]#
+Broadcast message from root@localhost (Thu 2024-11-14 18:32:03 IST):
+
+The system will reboot now!
+login as: root
+root@192.168.32.130's password:
+Last login: Thu Nov 14 17:24:12 2024 from 192.168.32.1
+[root@localhost ~]# ip -br q
+Object "q" is unknown, try "ip help".
+[root@localhost ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.32.130/24
+ens192           UP             192.168.22.1/24
+[root@localhost ~]# ping 192.168.22.1
+PING 192.168.22.1 (192.168.22.1) 56(84) bytes of data.
+64 bytes from 192.168.22.1: icmp_seq=1 ttl=64 time=0.037 ms
+^C
+--- 192.168.22.1 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.037/0.037/0.037/0.000 ms
+[root@localhost ~]# ping 192.168.32.130
+PING 192.168.32.130 (192.168.32.130) 56(84) bytes of data.
+64 bytes from 192.168.32.130: icmp_seq=1 ttl=64 time=0.039 ms
+^C
+--- 192.168.32.130 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.039/0.039/0.039/0.000 ms
+[root@localhost ~]# vi /etc/chrony.conf
+[root@localhost ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.32.130/24
+ens192           UP             192.168.22.1/24
+[root@localhost ~]# vi /etc/chrony.conf
+[root@localhost ~]# cat /etc/chrony.conf
+# Use public servers from the pool.ntp.org project.
+# Please consider joining the pool (https://www.pool.ntp.org/join.html).
+pool 2.rhel.pool.ntp.org iburst
+server 0.au.pool.ntp.org iburst
+server 1.au.pool.ntp.org iburst
+server 192.168.32.130
+server 192.168.22.1
+
+# Use NTP servers from DHCP.
+sourcedir /run/chrony-dhcp
+
+# Record the rate at which the system clock gains/losses time.
+driftfile /var/lib/chrony/drift
+
+# Allow the system clock to be stepped in the first three updates
+# if its offset is larger than 1 second.
+makestep 1.0 3
+
+# Enable kernel synchronization of the real-time clock (RTC).
+rtcsync
+
+# Enable hardware timestamping on all interfaces that support it.
+#hwtimestamp *
+
+# Increase the minimum number of selectable sources required to adjust
+# the system clock.
+#minsources 2
+
+# Allow NTP client access from local network.
+allow 192.168.32.130/24
+allow 192.168.22.1/24
+
+# Serve time even if not synchronized to a time source.
+local stratum 10
+
+# Require authentication (nts or key option) for all NTP sources.
+#authselectmode require
+
+# Specify file containing keys for NTP authentication.
+keyfile /etc/chrony.keys
+
+# Save NTS keys and cookies.
+ntsdumpdir /var/lib/chrony
+
+# Insert/delete leap seconds by slewing instead of stepping.
+#leapsecmode slew
+
+# Get TAI-UTC offset and leap seconds from the system tz database.
+leapsectz right/UTC
+
+# Specify directory for log files.
+logdir /var/log/chrony
+
+# Select which information is logged.
+#log measurements statistics tracking
+[root@localhost ~]# sudo timedatectl set-ntp true
+[root@localhost ~]# sudo systemctl restart chronyd
+[root@localhost ~]# sudo chronyc sources
+MS Name/IP address         Stratum Poll Reach LastRx Last sample
+===============================================================================
+^- ec2-15-207-248-194.ap-so>     4   6     7     1   -386us[-1145us] +/-   17ms
+^- 129.154.46.154                5   6     7     2  +3300us[+2541us] +/-   45ms
+^- ec2-3-6-43-90.ap-south-1>     4   6     7     1  +1792us[+1033us] +/-   15ms
+^* mail.nplindia.org             1   6     7     1  +8939ns[ -751us] +/- 4480us
+^- 159.196.176.154               1   6     7     1  -1044us[-1804us] +/-   81ms
+^- time.cloudflare.com           3   6    17     1  -4808us[-4808us] +/-   80ms
+^? localhost.localdomain         0   6     1     -     +0ns[   +0ns] +/-    0ns
+^? localhost.localdomain         0   6     1     -     +0ns[   +0ns] +/-    0ns
+[root@localhost ~]# sudo chronyc clients
+Hostname                      NTP   Drop Int IntL Last     Cmd   Drop Int  Last
+===============================================================================
+localhost.localdomain           1      0   -   -    14       0      0   -     -
+localhost.localdomain           1      0   -   -    14       0      0   -     -
+[root@localhost ~]# sudo firewall-cmd --add-service=ntp --permanent
+success
+[root@localhost ~]# sudo firewall-cmd --reload
+success
+[root@localhost ~]# sudo systemctl restart chronyd
+[root@localhost ~]# sudo chronyc sources
+MS Name/IP address         Stratum Poll Reach LastRx Last sample
+===============================================================================
+^+ ntp5.mum-in.hosts.301-mo>     2   6     7     2   +310us[-2043us] +/-   73ms
+^* ntp7.mum-in.hosts.301-mo>     2   6     7     1  +2318us[  -36us] +/-   75ms
+^- ec2-3-6-43-90.ap-south-1>     4   6    17     0  +2029us[+2029us] +/-   16ms
+^- 157.245.102.2                 2   6     7     2  +2270us[  -84us] +/-   32ms
+^+ mansfield.id.au               2   6     7     1  +3535us[+1181us] +/-   86ms
+^- time.cloudflare.com           3   6    17     1  -7202us[-7202us] +/-   84ms
+^? localhost.localdomain         0   6     1     -     +0ns[   +0ns] +/-    0ns
+^? localhost.localdomain         0   6     1     -     +0ns[   +0ns] +/-    0ns
+[root@localhost ~]# sudo chronyc tracking
+Reference ID    : C02ED227 (ntp7.mum-in.hosts.301-moved.de)
+Stratum         : 3
+Ref time (UTC)  : Thu Nov 14 13:13:53 2024
+System time     : 0.000001097 seconds slow of NTP time
+Last offset     : +0.001848459 seconds
+RMS offset      : 0.001848459 seconds
+Frequency       : 2.127 ppm fast
+Residual freq   : +23.239 ppm
+Skew            : 2.293 ppm
+Root delay      : 0.144865453 seconds
+Root dispersion : 0.002042102 seconds
+Update interval : 1.9 seconds
+Leap status     : Normal
+[root@localhost ~]# sudo chronyc makestep
+200 OK
+[root@localhost ~]#  chronyc sources
+MS Name/IP address         Stratum Poll Reach LastRx Last sample
+===============================================================================
+^+ ntp5.mum-in.hosts.301-mo>     2   6    17    34  -2449us[ -601us] +/-   78ms
+^* ntp7.mum-in.hosts.301-mo>     2   6    17    33   -442us[+1406us] +/-   74ms
+^+ ec2-3-6-43-90.ap-south-1>     4   6    17    34   +180us[+2029us] +/-   16ms
+^+ 157.245.102.2                 2   6    17    34  -1179us[ +669us] +/-   31ms
+^+ mansfield.id.au               2   6    17    33  +2285us[+4134us] +/-   89ms
+^- time.cloudflare.com           3   6    17    33  -7202us[-7202us] +/-   84ms
+^? localhost.localdomain         0   6     1     -     +0ns[   +0ns] +/-    0ns
+^? localhost.localdomain         0   6     1     -     +0ns[   +0ns] +/-    0ns
+[root@localhost ~]# chronyc sources -v
+
+  .-- Source mode  '^' = server, '=' = peer, '#' = local clock.
+ / .- Source state '*' = current best, '+' = combined, '-' = not combined,
+| /             'x' = may be in error, '~' = too variable, '?' = unusable.
+||                                                 .- xxxx [ yyyy ] +/- zzzz
+||      Reachability register (octal) -.           |  xxxx = adjusted offset,
+||      Log2(Polling interval) --.      |          |  yyyy = measured offset,
+||                                \     |          |  zzzz = estimated error.
+||                                 |    |           \
+MS Name/IP address         Stratum Poll Reach LastRx Last sample
+===============================================================================
+^+ ntp5.mum-in.hosts.301-mo>     2   6    17    41  -2449us[ -601us] +/-   78ms
+^* ntp7.mum-in.hosts.301-mo>     2   6    17    40   -442us[+1406us] +/-   74ms
+^+ ec2-3-6-43-90.ap-south-1>     4   6    17    41   +180us[+2029us] +/-   16ms
+^+ 157.245.102.2                 2   6    17    41  -1179us[ +669us] +/-   31ms
+^+ mansfield.id.au               2   6    17    40  +2285us[+4134us] +/-   89ms
+^- time.cloudflare.com           3   6    17    40  -7202us[-7202us] +/-   84ms
+^? localhost.localdomain         0   6     1     -     +0ns[   +0ns] +/-    0ns
+^? localhost.localdomain         0   6     1     -     +0ns[   +0ns] +/-    0ns
+[root@localhost ~]# chronyc sourcestats -v
+                             .- Number of sample points in measurement set.
+                            /    .- Number of residual runs with same sign.
+                           |    /    .- Length of measurement set (time).
+                           |   |    /      .- Est. clock freq error (ppm).
+                           |   |   |      /           .- Est. error in freq.
+                           |   |   |     |           /         .- Est. offset.
+                           |   |   |     |          |          |   On the -.
+                           |   |   |     |          |          |   samples. \
+                           |   |   |     |          |          |             |
+Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev
+==============================================================================
+ntp5.mum-in.hosts.301-mo>   4   3     6   -190.064   3997.101    -11ms   413us
+ntp7.mum-in.hosts.301-mo>   4   3     6    +49.313   3292.988  +2119us   442us
+ec2-3-6-43-90.ap-south-1>   4   4     6   -102.681  12345.218  -4469us  1471us
+157.245.102.2               4   4     6   +187.156   9864.197  +8491us  1556us
+mansfield.id.au             4   4     6   +227.027   4494.586    +13ms   477us
+time.cloudflare.com         4   3     6   -185.105  11462.167    -16ms  1662us
+localhost.localdomain       0   0     0     +0.000   2000.000     +0ns  4000ms
+localhost.localdomain       0   0     0     +0.000   2000.000     +0ns  4000ms
+[root@localhost ~]# systemctl restart chronyd ; watch chronyc tracking
+[root@localhost ~]# ^C
+[root@localhost ~]# sudo chronyc clients
+Hostname                      NTP   Drop Int IntL Last     Cmd   Drop Int  Last
+===============================================================================
+localhost.localdomain           1      0   -   -    23       0      0   -     -
+localhost.localdomain           1      0   -   -    23       0      0   -     -
+[root@localhost ~]#
+
