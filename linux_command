@@ -1,1 +1,2 @@
 salt '*' cmd.run 'echo "ServerKeyBits 1024" | sudo tee -a /etc/ssh/sshd_config && sudo systemctl restart sshd'
+salt '*' cmd.run "sudo chsh -s /sbin/nologin root"
