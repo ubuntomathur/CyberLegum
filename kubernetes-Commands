@@ -1,0 +1,11 @@
+#kubectl -n kube-system get cm kubeadm-config -o yaml
+#  kubectl -n kube-system edit cm kubeadm-config
+    add endpoint details in config file 
+    clusterName: kubernetes
+    controlPlaneEndpoint: 192.168.189.130:6443
+
+Regenrate the cert on master node 
+kubeadm token create --certificate-key b1ceedd93b06aabd077848387de542c7321333d4f8e4fe13bf2f2f526901348d --print-join-command
+#kubeadm init phase upload-certs --upload-certs
+replace the certs with newly created cert and run the below command on other node 
+# kubeadm join 192.168.189.130:6443 --token r4liyx.rpgcw3qr81lbebh4 --discovery-token-ca-cert-hash sha256:be0ef3c07c8a7d655469e7765851f6803539ae539e44853f88c113cab9c1395f --control-plane --certificate-key acfc0487e2eeb9a888b91389529a0f4ccb1b4aecf1e4618f74f4f8626e8fcd76
