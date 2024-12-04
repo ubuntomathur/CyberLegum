@@ -1,2 +1,3 @@
 NS=`kubectl get ns |grep Terminating | awk 'NR==1 {print $1}'` && kubectl get namespace "$NS" -o json   | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/"   | kubectl replace --raw /api/v1/namespaces/$NS/finalize -f -
 sudo kubectl drain <node name> --ignore-daemonsets --force --delete-local-data --disable-eviction --timeout 5m
+oc get namespace istio-system -o json | sed -e 's/"kubernetes"//' | kubectl replace --raw "/api/v1/namespaces/istio-system/finalize" -f -
