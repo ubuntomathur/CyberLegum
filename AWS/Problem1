@@ -1,0 +1,1225 @@
+[root@00-0c-29-fa-75-fb ~]# oc get project
+NAME                                               DISPLAY NAME   STATUS
+assisted-installer                                                Active
+default                                                           Active
+kube-node-lease                                                   Active
+kube-public                                                       Active
+kube-system                                                       Active
+openshift                                                         Active
+openshift-apiserver                                               Active
+openshift-apiserver-operator                                      Active
+openshift-authentication                                          Active
+openshift-authentication-operator                                 Active
+openshift-cloud-controller-manager                                Active
+openshift-cloud-controller-manager-operator                       Active
+openshift-cloud-credential-operator                               Active
+openshift-cloud-network-config-controller                         Active
+openshift-cloud-platform-infra                                    Active
+openshift-cluster-csi-drivers                                     Active
+openshift-cluster-machine-approver                                Active
+openshift-cluster-node-tuning-operator                            Active
+openshift-cluster-samples-operator                                Active
+openshift-cluster-storage-operator                                Active
+openshift-cluster-version                                         Active
+openshift-config                                                  Active
+openshift-config-managed                                          Active
+openshift-config-operator                                         Active
+openshift-console                                                 Active
+openshift-console-operator                                        Active
+openshift-console-user-settings                                   Active
+openshift-controller-manager                                      Active
+openshift-controller-manager-operator                             Active
+openshift-dns                                                     Active
+openshift-dns-operator                                            Active
+openshift-etcd                                                    Active
+openshift-etcd-operator                                           Active
+openshift-host-network                                            Active
+openshift-image-registry                                          Active
+openshift-infra                                                   Active
+openshift-ingress                                                 Active
+openshift-ingress-canary                                          Active
+openshift-ingress-operator                                        Active
+openshift-insights                                                Active
+openshift-kni-infra                                               Active
+openshift-kube-apiserver                                          Active
+openshift-kube-apiserver-operator                                 Active
+openshift-kube-controller-manager                                 Active
+openshift-kube-controller-manager-operator                        Active
+openshift-kube-scheduler                                          Active
+openshift-kube-scheduler-operator                                 Active
+openshift-kube-storage-version-migrator                           Active
+openshift-kube-storage-version-migrator-operator                  Active
+openshift-machine-api                                             Active
+openshift-machine-config-operator                                 Active
+openshift-marketplace                                             Active
+openshift-monitoring                                              Active
+openshift-multus                                                  Active
+openshift-network-console                                         Active
+openshift-network-diagnostics                                     Active
+openshift-network-node-identity                                   Active
+openshift-network-operator                                        Active
+openshift-node                                                    Active
+openshift-nutanix-infra                                           Active
+openshift-oauth-apiserver                                         Active
+openshift-openstack-infra                                         Active
+openshift-operator-lifecycle-manager                              Active
+openshift-operators                                               Active
+openshift-ovirt-infra                                             Active
+openshift-ovn-kubernetes                                          Active
+openshift-route-controller-manager                                Active
+openshift-service-ca                                              Active
+openshift-service-ca-operator                                     Active
+openshift-user-workload-monitoring                                Active
+openshift-vsphere-infra                                           Active
+[root@00-0c-29-fa-75-fb ~]#
+
+TEST-01 CASE 
+
+CREATE POD AND EXPOSE AS A SERVICE 
+
+
+root@00-0c-29-fa-75-fb ~]# oc get route -n openshift-console
+NAME        HOST/PORT                                              PATH   SERVICES    PORT    TERMINATION          WILDCARD
+console     console-openshift-console.apps.sno-cluster.ocp.lan            console     https   reencrypt/Redirect   None
+downloads   downloads-openshift-console.apps.sno-cluster.ocp.lan          downloads   http    edge/Redirect        None
+
+
+[root@00-0c-29-fa-75-fb ~]# oc create  deploy test1 --image=nginx
+deployment.apps/test1 created
+
+
+
+
+[root@00-0c-29-fa-75-fb ~]# oc get pods -o wide
+NAME                     READY   STATUS    RESTARTS   AGE   IP            NODE                NOMINATED NODE   READINESS GATES
+test1-867f587b77-66c5b   1/1     Running   0          63s   10.128.0.46   00-0c-29-fa-75-fb   <none>           <none>
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.46
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+
+[root@00-0c-29-fa-75-fb ~]# oc exec -it test1-867f587b77-66c5b bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@test1-867f587b77-66c5b:/# cd /usr/share/nginx/html/
+root@test1-867f587b77-66c5b:/usr/share/nginx/html# s
+bash: s: command not found
+root@test1-867f587b77-66c5b:/usr/share/nginx/html# ls
+50x.html  index.html
+root@test1-867f587b77-66c5b:/usr/share/nginx/html# echo "HELLO THIS IS " >index.html
+root@test1-867f587b77-66c5b:/usr/share/nginx/html# exit
+exit
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.46
+HELLO THIS IS
+[root@00-0c-29-fa-75-fb ~]# oc get nodes
+NAME                STATUS   ROLES                         AGE   VERSION
+00-0c-29-fa-75-fb   Ready    control-plane,master,worker   23d   v1.30.5
+[root@00-0c-29-fa-75-fb ~]# oc get nodes -o wide
+NAME                STATUS   ROLES                         AGE   VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE                                                KERNEL-VERSION                 CONTAINER-RUNTIME
+00-0c-29-fa-75-fb   Ready    control-plane,master,worker   23d   v1.30.5   192.168.29.123   <none>        Red Hat Enterprise Linux CoreOS 417.94.202411050056-0   5.14.0-427.44.1.el9_4.x86_64   cri-o://1.30.7-2.rhaos4.17.git2391edc.el9
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running   0          4m33s
+
+[root@00-0c-29-fa-75-fb ~]# oc expose deploy test1 --port=80  --type=NodePort
+service/test1 exposed
+[root@00-0c-29-fa-75-fb ~]# oc get svc
+NAME         TYPE           CLUSTER-IP       EXTERNAL-IP                            PORT(S)        AGE
+kubernetes   ClusterIP      172.30.0.1       <none>                                 443/TCP        23d
+openshift    ExternalName   <none>           kubernetes.default.svc.cluster.local   <none>         23d
+test1        NodePort       172.30.110.104   <none>                                 80:31722/TCP   2s
+
+
+
+Webbrower--->http://192.168.29.123:31722/
+
+
+
+
+
+
+
+
+CASE2:// Traffic diverted 
+
+[root@00-0c-29-fa-75-fb ~]# cat  test.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: v1
+  name: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: v1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: v1
+    spec:
+      containers:
+      - image: nginx:1.17
+        name: nginx
+
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: v1
+  name: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: v1
+    spec:
+      containers:
+      - image: nginx:1.16
+        name: nginx
+
+
+Service 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: v1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+
+[root@00-0c-29-fa-75-fb ~]# kubectl create deployment v1 --image=nginx:1.17 --replicas=3 --dry-run -o yaml > test.yml
+W1217 17:54:52.537602  149777 helpers.go:703] --dry-run is deprecated and can be replaced with --dry-run=client.
+[root@00-0c-29-fa-75-fb ~]# cat test.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: v1
+  name: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: v1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: v1
+    spec:
+      containers:
+      - image: nginx:1.17
+        name: nginx
+        resources: {}
+status: {}
+[root@00-0c-29-fa-75-fb ~]# vi test.yml
+[root@00-0c-29-fa-75-fb ~]# oc create -f test.yml
+deployment.apps/v1 created
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          3s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          3s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          3s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          5s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          5s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          5s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          6s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          6s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          6s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          7s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          7s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          7s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          8s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          8s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          8s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          8s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          8s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          8s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          9s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          9s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          9s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          10s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          10s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          10s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          11s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          11s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          11s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          12s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          12s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          12s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS              RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running             0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running             0          31m
+v1-595958bc86-4ql2c      0/1     ContainerCreating   0          12s
+v1-595958bc86-9btpx      0/1     ContainerCreating   0          12s
+v1-595958bc86-wkz69      0/1     ContainerCreating   0          12s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running   0          43m
+test2-79f97bcf4d-rw9rw   1/1     Running   0          32m
+v1-595958bc86-4ql2c      1/1     Running   0          28s
+v1-595958bc86-9btpx      1/1     Running   0          28s
+v1-595958bc86-wkz69      1/1     Running   0          28s
+[root@00-0c-29-fa-75-fb ~]# oc exec -it v1-595958bc86-4ql2c bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@v1-595958bc86-4ql2c:/# cd /usr/share/nginx/html/
+root@v1-595958bc86-4ql2c:/usr/share/nginx/html# echo " V1-V1 ">index.html
+root@v1-595958bc86-4ql2c:/usr/share/nginx/html# exit
+exit
+[root@00-0c-29-fa-75-fb ~]# oc exec -it v1-595958bc86-9btpx  bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@v1-595958bc86-9btpx:/#  cd /usr/share/nginx/html/
+root@v1-595958bc86-9btpx:/usr/share/nginx/html# echo " V2-V2 ">index.html
+root@v1-595958bc86-9btpx:/usr/share/nginx/html# exit
+exit
+[root@00-0c-29-fa-75-fb ~]# oc exec -it v1-595958bc86-9btpx  bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@v1-595958bc86-9btpx:/#  cd /usr/share/nginx/html/
+root@v1-595958bc86-9btpx:/usr/share/nginx/html# echo " V1-V1 ">index.html
+root@v1-595958bc86-9btpx:/usr/share/nginx/html# exit
+exit
+[root@00-0c-29-fa-75-fb ~]# oc exec -it  v1-595958bc86-wkz69  bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@v1-595958bc86-wkz69:/#  cd /usr/share/nginx/html/
+root@v1-595958bc86-wkz69:/usr/share/nginx/html# echo " V1-V1 ">index.html
+root@v1-595958bc86-wkz69:/usr/share/nginx/html# exit
+exit
+[root@00-0c-29-fa-75-fb ~]# oc get nodes -o wide
+NAME                STATUS   ROLES                         AGE   VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE                                                KERNEL-VERSION                 CONTAINER-RUNTIME
+00-0c-29-fa-75-fb   Ready    control-plane,master,worker   23d   v1.30.5   192.168.29.123   <none>        Red Hat Enterprise Linux CoreOS 417.94.202411050056-0   5.14.0-427.44.1.el9_4.x86_64   cri-o://1.30.7-2.rhaos4.17.git2391edc.el9
+[root@00-0c-29-fa-75-fb ~]# curl v1-595958bc86-4ql2c
+curl: (6) Could not resolve host: v1-595958bc86-4ql2c
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style type="text/css">
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        line-height: 1.66666667;
+        font-size: 16px;
+        color: #333;
+        background-color: #fff;
+        margin: 2em 1em;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 400;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .alert.alert-info {
+        background-color: #F0F0F0;
+        margin-top: 30px;
+        padding: 30px;
+      }
+      .alert p {
+        padding-left: 35px;
+      }
+      ul {
+        padding-left: 51px;
+        position: relative;
+      }
+      li {
+        font-size: 14px;
+        margin-bottom: 1em;
+      }
+      p.info {
+        position: relative;
+        font-size: 20px;
+      }
+      p.info:before, p.info:after {
+        content: "";
+        left: 0;
+        position: absolute;
+        top: 0;
+      }
+      p.info:before {
+        background: #0066CC;
+        border-radius: 16px;
+        color: #fff;
+        content: "i";
+        font: bold 16px/24px serif;
+        height: 24px;
+        left: 0px;
+        text-align: center;
+        top: 4px;
+        width: 24px;
+      }
+
+      @media (min-width: 768px) {
+        body {
+          margin: 6em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Application is not available</h1>
+      <p>The application is currently not serving requests at this endpoint. It may not have been started or is still starting.</p>
+
+      <div class="alert alert-info">
+        <p class="info">
+          Possible reasons you are seeing this page:
+        </p>
+        <ul>
+          <li>
+            <strong>The host doesn't exist.</strong>
+            Make sure the hostname was typed correctly and that a route matching this hostname exists.
+          </li>
+          <li>
+            <strong>The host exists, but doesn't have a matching path.</strong>
+            Check if the URL path was typed correctly and that the route was created using the desired path.
+          </li>
+          <li>
+            <strong>Route and path matches, but all pods are down.</strong>
+            Make sure that the resources exposed by this route (pods, services, deployment configs, etc) have at least one pod running.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style type="text/css">
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        line-height: 1.66666667;
+        font-size: 16px;
+        color: #333;
+        background-color: #fff;
+        margin: 2em 1em;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 400;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .alert.alert-info {
+        background-color: #F0F0F0;
+        margin-top: 30px;
+        padding: 30px;
+      }
+      .alert p {
+        padding-left: 35px;
+      }
+      ul {
+        padding-left: 51px;
+        position: relative;
+      }
+      li {
+        font-size: 14px;
+        margin-bottom: 1em;
+      }
+      p.info {
+        position: relative;
+        font-size: 20px;
+      }
+      p.info:before, p.info:after {
+        content: "";
+        left: 0;
+        position: absolute;
+        top: 0;
+      }
+      p.info:before {
+        background: #0066CC;
+        border-radius: 16px;
+        color: #fff;
+        content: "i";
+        font: bold 16px/24px serif;
+        height: 24px;
+        left: 0px;
+        text-align: center;
+        top: 4px;
+        width: 24px;
+      }
+
+      @media (min-width: 768px) {
+        body {
+          margin: 6em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Application is not available</h1>
+      <p>The application is currently not serving requests at this endpoint. It may not have been started or is still starting.</p>
+
+      <div class="alert alert-info">
+        <p class="info">
+          Possible reasons you are seeing this page:
+        </p>
+        <ul>
+          <li>
+            <strong>The host doesn't exist.</strong>
+            Make sure the hostname was typed correctly and that a route matching this hostname exists.
+          </li>
+          <li>
+            <strong>The host exists, but doesn't have a matching path.</strong>
+            Check if the URL path was typed correctly and that the route was created using the desired path.
+          </li>
+          <li>
+            <strong>Route and path matches, but all pods are down.</strong>
+            Make sure that the resources exposed by this route (pods, services, deployment configs, etc) have at least one pod running.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style type="text/css">
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        line-height: 1.66666667;
+        font-size: 16px;
+        color: #333;
+        background-color: #fff;
+        margin: 2em 1em;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 400;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .alert.alert-info {
+        background-color: #F0F0F0;
+        margin-top: 30px;
+        padding: 30px;
+      }
+      .alert p {
+        padding-left: 35px;
+      }
+      ul {
+        padding-left: 51px;
+        position: relative;
+      }
+      li {
+        font-size: 14px;
+        margin-bottom: 1em;
+      }
+      p.info {
+        position: relative;
+        font-size: 20px;
+      }
+      p.info:before, p.info:after {
+        content: "";
+        left: 0;
+        position: absolute;
+        top: 0;
+      }
+      p.info:before {
+        background: #0066CC;
+        border-radius: 16px;
+        color: #fff;
+        content: "i";
+        font: bold 16px/24px serif;
+        height: 24px;
+        left: 0px;
+        text-align: center;
+        top: 4px;
+        width: 24px;
+      }
+
+      @media (min-width: 768px) {
+        body {
+          margin: 6em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Application is not available</h1>
+      <p>The application is currently not serving requests at this endpoint. It may not have been started or is still starting.</p>
+
+      <div class="alert alert-info">
+        <p class="info">
+          Possible reasons you are seeing this page:
+        </p>
+        <ul>
+          <li>
+            <strong>The host doesn't exist.</strong>
+            Make sure the hostname was typed correctly and that a route matching this hostname exists.
+          </li>
+          <li>
+            <strong>The host exists, but doesn't have a matching path.</strong>
+            Check if the URL path was typed correctly and that the route was created using the desired path.
+          </li>
+          <li>
+            <strong>Route and path matches, but all pods are down.</strong>
+            Make sure that the resources exposed by this route (pods, services, deployment configs, etc) have at least one pod running.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style type="text/css">
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        line-height: 1.66666667;
+        font-size: 16px;
+        color: #333;
+        background-color: #fff;
+        margin: 2em 1em;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 400;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .alert.alert-info {
+        background-color: #F0F0F0;
+        margin-top: 30px;
+        padding: 30px;
+      }
+      .alert p {
+        padding-left: 35px;
+      }
+      ul {
+        padding-left: 51px;
+        position: relative;
+      }
+      li {
+        font-size: 14px;
+        margin-bottom: 1em;
+      }
+      p.info {
+        position: relative;
+        font-size: 20px;
+      }
+      p.info:before, p.info:after {
+        content: "";
+        left: 0;
+        position: absolute;
+        top: 0;
+      }
+      p.info:before {
+        background: #0066CC;
+        border-radius: 16px;
+        color: #fff;
+        content: "i";
+        font: bold 16px/24px serif;
+        height: 24px;
+        left: 0px;
+        text-align: center;
+        top: 4px;
+        width: 24px;
+      }
+
+      @media (min-width: 768px) {
+        body {
+          margin: 6em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Application is not available</h1>
+      <p>The application is currently not serving requests at this endpoint. It may not have been started or is still starting.</p>
+
+      <div class="alert alert-info">
+        <p class="info">
+          Possible reasons you are seeing this page:
+        </p>
+        <ul>
+          <li>
+            <strong>The host doesn't exist.</strong>
+            Make sure the hostname was typed correctly and that a route matching this hostname exists.
+          </li>
+          <li>
+            <strong>The host exists, but doesn't have a matching path.</strong>
+            Check if the URL path was typed correctly and that the route was created using the desired path.
+          </li>
+          <li>
+            <strong>Route and path matches, but all pods are down.</strong>
+            Make sure that the resources exposed by this route (pods, services, deployment configs, etc) have at least one pod running.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style type="text/css">
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        line-height: 1.66666667;
+        font-size: 16px;
+        color: #333;
+        background-color: #fff;
+        margin: 2em 1em;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 400;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .alert.alert-info {
+        background-color: #F0F0F0;
+        margin-top: 30px;
+        padding: 30px;
+      }
+      .alert p {
+        padding-left: 35px;
+      }
+      ul {
+        padding-left: 51px;
+        position: relative;
+      }
+      li {
+        font-size: 14px;
+        margin-bottom: 1em;
+      }
+      p.info {
+        position: relative;
+        font-size: 20px;
+      }
+      p.info:before, p.info:after {
+        content: "";
+        left: 0;
+        position: absolute;
+        top: 0;
+      }
+      p.info:before {
+        background: #0066CC;
+        border-radius: 16px;
+        color: #fff;
+        content: "i";
+        font: bold 16px/24px serif;
+        height: 24px;
+        left: 0px;
+        text-align: center;
+        top: 4px;
+        width: 24px;
+      }
+
+      @media (min-width: 768px) {
+        body {
+          margin: 6em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Application is not available</h1>
+      <p>The application is currently not serving requests at this endpoint. It may not have been started or is still starting.</p>
+
+      <div class="alert alert-info">
+        <p class="info">
+          Possible reasons you are seeing this page:
+        </p>
+        <ul>
+          <li>
+            <strong>The host doesn't exist.</strong>
+            Make sure the hostname was typed correctly and that a route matching this hostname exists.
+          </li>
+          <li>
+            <strong>The host exists, but doesn't have a matching path.</strong>
+            Check if the URL path was typed correctly and that the route was created using the desired path.
+          </li>
+          <li>
+            <strong>Route and path matches, but all pods are down.</strong>
+            Make sure that the resources exposed by this route (pods, services, deployment configs, etc) have at least one pod running.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+test1-867f587b77-66c5b   1/1     Running   0          46m
+test2-79f97bcf4d-rw9rw   1/1     Running   0          35m
+v1-595958bc86-4ql2c      1/1     Running   0          3m26s
+v1-595958bc86-9btpx      1/1     Running   0          3m26s
+v1-595958bc86-wkz69      1/1     Running   0          3m26s
+[root@00-0c-29-fa-75-fb ~]# oc get nodes -o wide
+NAME                STATUS   ROLES                         AGE   VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE                                                KERNEL-VERSION                 CONTAINER-RUNTIME
+00-0c-29-fa-75-fb   Ready    control-plane,master,worker   23d   v1.30.5   192.168.29.123   <none>        Red Hat Enterprise Linux CoreOS 417.94.202411050056-0   5.14.0-427.44.1.el9_4.x86_64   cri-o://1.30.7-2.rhaos4.17.git2391edc.el9
+[root@00-0c-29-fa-75-fb ~]# oc get pods -o wide
+NAME                     READY   STATUS    RESTARTS   AGE     IP            NODE                NOMINATED NODE   READINESS GATES
+test1-867f587b77-66c5b   1/1     Running   0          47m     10.128.0.46   00-0c-29-fa-75-fb   <none>           <none>
+test2-79f97bcf4d-rw9rw   1/1     Running   0          35m     10.128.0.67   00-0c-29-fa-75-fb   <none>           <none>
+v1-595958bc86-4ql2c      1/1     Running   0          4m15s   10.128.0.94   00-0c-29-fa-75-fb   <none>           <none>
+v1-595958bc86-9btpx      1/1     Running   0          4m15s   10.128.0.93   00-0c-29-fa-75-fb   <none>           <none>
+v1-595958bc86-wkz69      1/1     Running   0          4m15s   10.128.0.95   00-0c-29-fa-75-fb   <none>           <none>
+[root@00-0c-29-fa-75-fb ~]# curl v1-595958bc86-4ql2c
+curl: (6) Could not resolve host: v1-595958bc86-4ql2c
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.94
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl  10.128.0.93
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl  10.128.0.95
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# oc get pods --show-labels
+NAME                     READY   STATUS    RESTARTS   AGE     LABELS
+test1-867f587b77-66c5b   1/1     Running   0          48m     app=test1,pod-template-hash=867f587b77
+test2-79f97bcf4d-rw9rw   1/1     Running   0          36m     app=test2,pod-template-hash=79f97bcf4d
+v1-595958bc86-4ql2c      1/1     Running   0          4m54s   app=v1,pod-template-hash=595958bc86
+v1-595958bc86-9btpx      1/1     Running   0          4m54s   app=v1,pod-template-hash=595958bc86
+v1-595958bc86-wkz69      1/1     Running   0          4m54s   app=v1,pod-template-hash=595958bc86
+[root@00-0c-29-fa-75-fb ~]# cp test.yml test2.yml
+[root@00-0c-29-fa-75-fb ~]# vi test2.yml
+[root@00-0c-29-fa-75-fb ~]# oc get deploy
+NAME    READY   UP-TO-DATE   AVAILABLE   AGE
+test1   1/1     1            1           49m
+test2   1/1     1            1           38m
+v1      3/3     3            3           6m43s
+[root@00-0c-29-fa-75-fb ~]# oc delete deploy test1 test2
+deployment.apps "test1" deleted
+deployment.apps "test2" deleted
+[root@00-0c-29-fa-75-fb ~]# oc create -f test2.yml
+deployment.apps/v2 created
+[root@00-0c-29-fa-75-fb ~]# oc get deploy
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+v1     3/3     3            3           7m13s
+v2     0/1     1            0           8s
+[root@00-0c-29-fa-75-fb ~]# oc get deploy
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+v1     3/3     3            3           7m15s
+v2     0/1     1            0           10s
+[root@00-0c-29-fa-75-fb ~]# oc get deploy
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+v1     3/3     3            3           7m16s
+v2     0/1     1            0           11s
+[root@00-0c-29-fa-75-fb ~]# oc get deploy
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+v1     3/3     3            3           7m16s
+v2     0/1     1            0           11s
+[root@00-0c-29-fa-75-fb ~]# oc get deploy
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+v1     3/3     3            3           7m17s
+v2     0/1     1            0           12s
+[root@00-0c-29-fa-75-fb ~]# oc get deploy
+\NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+v1     3/3     3            3           7m18s
+v2     0/1     1            0           13s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m21s
+v1-595958bc86-9btpx   1/1     Running             0          7m21s
+v1-595958bc86-wkz69   1/1     Running             0          7m21s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          16s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m22s
+v1-595958bc86-9btpx   1/1     Running             0          7m22s
+v1-595958bc86-wkz69   1/1     Running             0          7m22s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          17s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m23s
+v1-595958bc86-9btpx   1/1     Running             0          7m23s
+v1-595958bc86-wkz69   1/1     Running             0          7m23s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          18s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m24s
+v1-595958bc86-9btpx   1/1     Running             0          7m24s
+v1-595958bc86-wkz69   1/1     Running             0          7m24s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          19s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m24s
+v1-595958bc86-9btpx   1/1     Running             0          7m24s
+v1-595958bc86-wkz69   1/1     Running             0          7m24s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          19s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+^[[ANAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m25s
+v1-595958bc86-9btpx   1/1     Running             0          7m25s
+v1-595958bc86-wkz69   1/1     Running             0          7m25s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          20s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m25s
+v1-595958bc86-9btpx   1/1     Running             0          7m25s
+v1-595958bc86-wkz69   1/1     Running             0          7m25s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          20s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m26s
+v1-595958bc86-9btpx   1/1     Running             0          7m26s
+v1-595958bc86-wkz69   1/1     Running             0          7m26s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          21s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m26s
+v1-595958bc86-9btpx   1/1     Running             0          7m26s
+v1-595958bc86-wkz69   1/1     Running             0          7m26s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          21s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m27s
+v1-595958bc86-9btpx   1/1     Running             0          7m27s
+v1-595958bc86-wkz69   1/1     Running             0          7m27s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          22s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m27s
+v1-595958bc86-9btpx   1/1     Running             0          7m27s
+v1-595958bc86-wkz69   1/1     Running             0          7m27s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          22s
+[root@00-0c-29-fa-75-fb ~]# oc get pods
+NAME                  READY   STATUS              RESTARTS   AGE
+v1-595958bc86-4ql2c   1/1     Running             0          7m28s
+v1-595958bc86-9btpx   1/1     Running             0          7m28s
+v1-595958bc86-wkz69   1/1     Running             0          7m28s
+v2-749c89475c-pn8b2   0/1     ContainerCreating   0          23s
+[root@00-0c-29-fa-75-fb ~]# oc get pods --show-labels
+NAME                  READY   STATUS    RESTARTS   AGE     LABELS
+v1-595958bc86-4ql2c   1/1     Running   0          7m36s   app=v1,pod-template-hash=595958bc86
+v1-595958bc86-9btpx   1/1     Running   0          7m36s   app=v1,pod-template-hash=595958bc86
+v1-595958bc86-wkz69   1/1     Running   0          7m36s   app=v1,pod-template-hash=595958bc86
+v2-749c89475c-pn8b2   1/1     Running   0          31s     app=v1,pod-template-hash=749c89475c
+[root@00-0c-29-fa-75-fb ~]# oc exec -it v2-749c89475c-pn8b2 bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@v2-749c89475c-pn8b2:/# cd /usr/s
+sbin/  share/ src/
+root@v2-749c89475c-pn8b2:/# cd /usr/share/nginx/html/
+root@v2-749c89475c-pn8b2:/usr/share/nginx/html# echo "V2" >index.html
+root@v2-749c89475c-pn8b2:/usr/share/nginx/html# exit
+exit
+[root@00-0c-29-fa-75-fb ~]# oc get pods -owide
+NAME                  READY   STATUS    RESTARTS   AGE     IP            NODE                NOMINATED NODE   READINESS GATES
+v1-595958bc86-4ql2c   1/1     Running   0          8m58s   10.128.0.94   00-0c-29-fa-75-fb   <none>           <none>
+v1-595958bc86-9btpx   1/1     Running   0          8m58s   10.128.0.93   00-0c-29-fa-75-fb   <none>           <none>
+v1-595958bc86-wkz69   1/1     Running   0          8m58s   10.128.0.95   00-0c-29-fa-75-fb   <none>           <none>
+v2-749c89475c-pn8b2   1/1     Running   0          113s    10.128.0.98   00-0c-29-fa-75-fb   <none>           <none>
+[root@00-0c-29-fa-75-fb ~]# curl
+curl: try 'curl --help' or 'curl --manual' for more information
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.98
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.95
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.93
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.994
+curl: (6) Could not resolve host: 10.128.0.994
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.994
+curl: (6) Could not resolve host: 10.128.0.994
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.994
+curl: (6) Could not resolve host: 10.128.0.994
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.994
+curl: (6) Could not resolve host: 10.128.0.994
+[root@00-0c-29-fa-75-fb ~]# curl 10.128.0.94
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# vi seriveupdate.yml
+[root@00-0c-29-fa-75-fb ~]# vi seriveupdate.yml
+[root@00-0c-29-fa-75-fb ~]# vi seriveupdate.yml
+[root@00-0c-29-fa-75-fb ~]# kubectl create -f  seriveupdate.yml
+service/my-service created
+[root@00-0c-29-fa-75-fb ~]# oc get svc
+NAME         TYPE           CLUSTER-IP       EXTERNAL-IP                            PORT(S)   AGE
+kubernetes   ClusterIP      172.30.0.1       <none>                                 443/TCP   23d
+my-service   ClusterIP      172.30.253.227   <none>                                 80/TCP    3s
+openshift    ExternalName   <none>           kubernetes.default.svc.cluster.local   <none>    23d
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 172.30.253.227
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# oc get svc
+NAME         TYPE           CLUSTER-IP       EXTERNAL-IP                            PORT(S)   AGE
+kubernetes   ClusterIP      172.30.0.1       <none>                                 443/TCP   23d
+my-service   ClusterIP      172.30.253.227   <none>                                 80/TCP    52s
+openshift    ExternalName   <none>           kubernetes.default.svc.cluster.local   <none>    23d
+[root@00-0c-29-fa-75-fb ~]# oc edit svc my-service
+service/my-service edited
+[root@00-0c-29-fa-75-fb ~]# oc get svc
+NAME         TYPE           CLUSTER-IP       EXTERNAL-IP                            PORT(S)        AGE
+kubernetes   ClusterIP      172.30.0.1       <none>                                 443/TCP        23d
+my-service   NodePort       172.30.253.227   <none>                                 80:31020/TCP   84s
+openshift    ExternalName   <none>           kubernetes.default.svc.cluster.local   <none>         23d
+[root@00-0c-29-fa-75-fb ~]# oc get nodes
+NAME                STATUS   ROLES                         AGE   VERSION
+00-0c-29-fa-75-fb   Ready    control-plane,master,worker   23d   v1.30.5
+[root@00-0c-29-fa-75-fb ~]# oc get nodes -o wide
+NAME                STATUS   ROLES                         AGE   VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE                                                KERNEL-VERSION                 CONTAINER-RUNTIME
+00-0c-29-fa-75-fb   Ready    control-plane,master,worker   23d   v1.30.5   192.168.29.123   <none>        Red Hat Enterprise Linux CoreOS 417.94.202411050056-0   5.14.0-427.44.1.el9_4.x86_64   cri-o://1.30.7-2.rhaos4.17.git2391edc.el9
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+V2
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# curl 192.168.29.123:31020
+ V1-V1
+[root@00-0c-29-fa-75-fb ~]# ls -l
+total 16980
+-rwx------. 1 root root    11903 Dec 17 17:33 get_helm.sh
+-rw-r--r--. 1 root root 17344280 Dec 17 17:41 helm.tar.gz
+-rw-r--r--. 1 root root    12140 Nov 24 17:07 kubeconfig
+drwxr-xr-x. 2 core core       38 Dec 17 17:42 linux-amd64
+-rw-r--r--. 1 root root      153 Dec 17 18:08 seriveupdate.yml
+-rw-r--r--. 1 root root      356 Dec 17 17:50 service.yml
+-rw-r--r--. 1 root root      288 Dec 17 17:55 test.yml
+-rw-r--r--. 1 root root      288 Dec 17 18:02 test2.yml
+[root@00-0c-29-fa-75-fb ~]# cat  test.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: v1
+  name: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: v1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: v1
+    spec:
+      containers:
+      - image: nginx:1.17
+        name: nginx
+[root@00-0c-29-fa-75-fb ~]# cat test2.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: v1
+  name: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: v1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: v1
+    spec:
+      containers:
+      - image: nginx:1.16
+        name: nginx
+[root@00-0c-29-fa-75-fb ~]# cat service.yml
+.bash_history     .bash_profile     .kube/            get_helm.sh       kubeconfig        seriveupdate.yml  test.yml
+.bash_logout      .bashrc           .ssh/             helm.tar.gz       linux-amd64/      service.yml       test2.yml
+[root@00-0c-29-fa-75-fb ~]# ls -l
+total 16980
+-rwx------. 1 root root    11903 Dec 17 17:33 get_helm.sh
+-rw-r--r--. 1 root root 17344280 Dec 17 17:41 helm.tar.gz
+-rw-r--r--. 1 root root    12140 Nov 24 17:07 kubeconfig
+drwxr-xr-x. 2 core core       38 Dec 17 17:42 linux-amd64
+-rw-r--r--. 1 root root      153 Dec 17 18:08 seriveupdate.yml
+-rw-r--r--. 1 root root      356 Dec 17 17:50 service.yml
+-rw-r--r--. 1 root root      288 Dec 17 17:55 test.yml
+-rw-r--r--. 1 root root      288 Dec 17 18:02 test2.yml
+[root@00-0c-29-fa-75-fb ~]# cat seriveupdate.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: v1
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+[root@00-0c-29-fa-75-fb ~]#
+[root@00-0c-29-fa-75-fb ~]#
+
+
+
+
+
+
