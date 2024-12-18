@@ -1,0 +1,4 @@
+cp /etc/sysconfig/iptables /etc/sysconfig/iptables.backup
+iptables -L -v -n > /tmp/iptables_<date>.txt
+iptables-save > /etc/sysconfig/iptables.backup
+iptables-restore < /etc/sysconfig/iptables.backup
