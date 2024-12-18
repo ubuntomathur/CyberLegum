@@ -1,0 +1,16 @@
+sudo rabbitmqctl forget_cluster_node rabbit@opl-n-war-wsdm-masterbm-2
+sudo mv /var/lib/rabbitmq/mnesia/ keep
+sudo ls -la /var/lib/rabbitmq/mnesia
+sudo service rabbitmq-server start
+sudo service rabbitmq-server status 
+rabbitmqctl status
+rabbitmqctl cluster_status
+rabbitmqctl stop_app
+rabbitmqctl reset
+rabbitmqctl join_cluster rabbit@overcloud-controller-1   (Wait for the prompt and then check status)
+rabbitmqctl start_app
+rabbitmqctl cluster_status
+rabbitmqctl status
+cat /var/lib/rabbitmq/.erlang.cookie
+sudo rabbitmqctl force_reset
+sudo rabbitmqctl join_cluster "rabbit@masterb"
