@@ -1,0 +1,2004 @@
+* Closing connection 0
+curl: (60) SSL certificate problem: self-signed certificate
+More details here: https://curl.se/docs/sslcerts.html
+
+curl failed to verify the legitimacy of the server and therefore could not
+establish a secure connection to it. To learn more about this situation and
+how to fix it, please visit the web page mentioned above.
+[root@master ~]# ip -pr a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: ens160: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 00:0c:29:29:6f:31 brd ff:ff:ff:ff:ff:ff
+    altname enp3s0
+    inet 192.168.29.15/24 brd 192.168.29.255 scope global noprefixroute ens160
+       valid_lft forever preferred_lft forever
+3: cali3db4182a67b@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1480 qdisc noqueue state UP group default qlen 1000
+    link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns cni-4ed63a8e-a653-1622-62ae-b89a55572852
+    inet6 fe80::ecee:eeff:feee:eeee/64 scope link
+       valid_lft forever preferred_lft forever
+4: cali16362734945@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1480 qdisc noqueue state UP group default qlen 1000
+    link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns cni-c31b2220-bb3b-4948-b667-226486edf627
+    inet6 fe80::ecee:eeff:feee:eeee/64 scope link
+       valid_lft forever preferred_lft forever
+5: tunl0@NONE: <NOARP,UP,LOWER_UP> mtu 1480 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/ipip 0.0.0.0 brd 0.0.0.0
+    inet 172.16.204.64/32 scope global tunl0
+       valid_lft forever preferred_lft forever
+[root@master ~]# kubectl get pods -o wide \
+> ^C
+[root@master ~]# kubectl get pods -o wide
+NAME                    READY   STATUS    RESTARTS      AGE     IP              NODE                  NOMINATED NODE   READINESS GATES
+app1-5c5788cbbf-z49bz   1/1     Running   1 (43m ago)   3d13h   172.16.71.209   worker2.example.com   <none>           <none>
+app2-b694f4699-hjqw9    1/1     Running   1 (43m ago)   3d13h   172.16.43.14    worker3.example.com   <none>           <none>
+[root@master ~]# kubectl get svc
+NAME           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+app1-service   ClusterIP   10.110.194.122   <none>        80/TCP    3d13h
+app2-service   ClusterIP   10.106.34.100    <none>        80/TCP    3d13h
+kubernetes     ClusterIP   10.96.0.1        <none>        443/TCP   51d
+[root@master ~]# kubectl get svc -A
+NAMESPACE        NAME                                 TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)                      AGE
+cert-manager     cert-manager                         ClusterIP      10.96.102.115    <none>           9402/TCP                     3d13h
+cert-manager     cert-manager-cainjector              ClusterIP      10.107.176.60    <none>           9402/TCP                     3d13h
+cert-manager     cert-manager-webhook                 ClusterIP      10.107.252.228   <none>           443/TCP,9402/TCP             3d13h
+default          app1-service                         ClusterIP      10.110.194.122   <none>           80/TCP                       3d13h
+default          app2-service                         ClusterIP      10.106.34.100    <none>           80/TCP                       3d13h
+default          kubernetes                           ClusterIP      10.96.0.1        <none>           443/TCP                      51d
+ingress-nginx    ingress-nginx-controller             LoadBalancer   10.110.138.207   192.168.29.240   80:30884/TCP,443:31725/TCP   4d17h
+ingress-nginx    ingress-nginx-controller-admission   ClusterIP      10.101.251.140   <none>           443/TCP                      4d17h
+kube-system      kube-dns                             ClusterIP      10.96.0.10       <none>           53/UDP,53/TCP,9153/TCP       51d
+metallb-system   metallb-webhook-service              ClusterIP      10.107.144.214   <none>           443/TCP                      4d12h
+[root@master ~]# kubectl edit svc app1-service
+service/app1-service edited
+[root@master ~]# kubectl get svc -A
+NAMESPACE        NAME                                 TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)                      AGE
+cert-manager     cert-manager                         ClusterIP      10.96.102.115    <none>           9402/TCP                     3d13h
+cert-manager     cert-manager-cainjector              ClusterIP      10.107.176.60    <none>           9402/TCP                     3d13h
+cert-manager     cert-manager-webhook                 ClusterIP      10.107.252.228   <none>           443/TCP,9402/TCP             3d13h
+default          app1-service                         LoadBalancer   10.110.194.122   192.168.29.241   80:31083/TCP                 3d13h
+default          app2-service                         ClusterIP      10.106.34.100    <none>           80/TCP                       3d13h
+default          kubernetes                           ClusterIP      10.96.0.1        <none>           443/TCP                      51d
+ingress-nginx    ingress-nginx-controller             LoadBalancer   10.110.138.207   192.168.29.240   80:30884/TCP,443:31725/TCP   4d17h
+ingress-nginx    ingress-nginx-controller-admission   ClusterIP      10.101.251.140   <none>           443/TCP                      4d17h
+kube-system      kube-dns                             ClusterIP      10.96.0.10       <none>           53/UDP,53/TCP,9153/TCP       51d
+metallb-system   metallb-webhook-service              ClusterIP      10.107.144.214   <none>           443/TCP                      4d12h
+[root@master ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.29.15/24
+cali3db4182a67b@if2 UP             fe80::ecee:eeff:feee:eeee/64
+cali16362734945@if2 UP             fe80::ecee:eeff:feee:eeee/64
+tunl0@NONE       UNKNOWN        172.16.204.64/32
+[root@master ~]# kubectl edit svc app1-service
+service/app1-service edited
+[root@master ~]# kubectl get svc -A
+NAMESPACE        NAME                                 TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)                      AGE
+cert-manager     cert-manager                         ClusterIP      10.96.102.115    <none>           9402/TCP                     3d13h
+cert-manager     cert-manager-cainjector              ClusterIP      10.107.176.60    <none>           9402/TCP                     3d13h
+cert-manager     cert-manager-webhook                 ClusterIP      10.107.252.228   <none>           443/TCP,9402/TCP             3d13h
+default          app1-service                         NodePort       10.110.194.122   <none>           80:31083/TCP                 3d13h
+default          app2-service                         ClusterIP      10.106.34.100    <none>           80/TCP                       3d13h
+default          kubernetes                           ClusterIP      10.96.0.1        <none>           443/TCP                      51d
+ingress-nginx    ingress-nginx-controller             LoadBalancer   10.110.138.207   192.168.29.240   80:30884/TCP,443:31725/TCP   4d17h
+ingress-nginx    ingress-nginx-controller-admission   ClusterIP      10.101.251.140   <none>           443/TCP                      4d17h
+kube-system      kube-dns                             ClusterIP      10.96.0.10       <none>           53/UDP,53/TCP,9153/TCP       51d
+metallb-system   metallb-webhook-service              ClusterIP      10.107.144.214   <none>           443/TCP                      4d12h
+[root@master ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.29.15/24
+cali3db4182a67b@if2 UP             fe80::ecee:eeff:feee:eeee/64
+cali16362734945@if2 UP             fe80::ecee:eeff:feee:eeee/64
+tunl0@NONE       UNKNOWN        172.16.204.64/32
+[root@master ~]# 192.168.29.15/24export RELEASE=$(curl https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)^C
+[root@master ~]# ^C
+[root@master ~]#  kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-operator.yaml
+error: unable to read URL "https://github.com/kubevirt/kubevirt/releases/download//kubevirt-operator.yaml", server reported 404 Not Found, status code=404
+[root@master ~]# export RELEASE=$(curl https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0     18      0 --:--:-- --:--:-- --:--:--    18
+[root@master ~]#  kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-operator.yaml
+namespace/kubevirt created
+customresourcedefinition.apiextensions.k8s.io/kubevirts.kubevirt.io created
+priorityclass.scheduling.k8s.io/kubevirt-cluster-critical created
+clusterrole.rbac.authorization.k8s.io/kubevirt.io:operator created
+serviceaccount/kubevirt-operator created
+role.rbac.authorization.k8s.io/kubevirt-operator created
+rolebinding.rbac.authorization.k8s.io/kubevirt-operator-rolebinding created
+clusterrole.rbac.authorization.k8s.io/kubevirt-operator created
+clusterrolebinding.rbac.authorization.k8s.io/kubevirt-operator created
+deployment.apps/virt-operator created
+[root@master ~]# kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-cr.yaml
+kubevirt.kubevirt.io/kubevirt created
+[root@master ~]# export TAG=$(curl -s -w %{redirect_url} https://github.com/kubevirt/containerized-data-importer/releases/latest)
+[root@master ~]# kubectl create -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-operator.yaml
+error: unable to read URL "https://github.com/kubevirt/containerized-data-importer/releases/download//cdi-operator.yaml", server reported 404 Not Found, status code=404
+[root@master ~]# export TAG=$(curl -s -w %{redirect_url} https://github.com/kubevirt/containerized-data-importer/releases/latest)
+[root@master ~]# export VERSION=$(echo ${TAG##*/})
+[root@master ~]# kubectl create -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-operator.yaml
+namespace/cdi created
+customresourcedefinition.apiextensions.k8s.io/cdis.cdi.kubevirt.io created
+clusterrole.rbac.authorization.k8s.io/cdi-operator-cluster created
+clusterrolebinding.rbac.authorization.k8s.io/cdi-operator created
+serviceaccount/cdi-operator created
+role.rbac.authorization.k8s.io/cdi-operator created
+rolebinding.rbac.authorization.k8s.io/cdi-operator created
+deployment.apps/cdi-operator created
+[root@master ~]# kubectl create -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-cr.yaml
+cdi.cdi.kubevirt.io/cdi created
+[root@master ~]# kubectl get ns
+NAME              STATUS   AGE
+cdi               Active   15s
+cert-manager      Active   3d13h
+default           Active   51d
+ingress-nginx     Active   4d17h
+kube-node-lease   Active   51d
+kube-public       Active   51d
+kube-system       Active   51d
+kubevirt          Active   2m21s
+metallb-system    Active   4d13h
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS     RESTARTS   AGE
+virt-api-5f9f64fd4d-7b5hh          1/1     Running    0          98s
+virt-api-5f9f64fd4d-9nch4          1/1     Running    0          98s
+virt-controller-7c8d6577b6-dl25m   1/1     Running    0          62s
+virt-controller-7c8d6577b6-mz6bl   1/1     Running    0          62s
+virt-handler-8kpfp                 0/1     Init:0/1   0          62s
+virt-handler-brjdj                 0/1     Init:0/1   0          62s
+virt-handler-rht9c                 0/1     Init:0/1   0          62s
+virt-operator-79456d8689-g8k9w     1/1     Running    0          2m30s
+virt-operator-79456d8689-p6czg     1/1     Running    0          2m30s
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS              RESTARTS   AGE
+cdi-apiserver-74dcb7f4c5-6kb9p     0/1     ContainerCreating   0          3s
+cdi-deployment-546cdb5fcd-9b4wg    0/1     ContainerCreating   0          3s
+cdi-operator-59c7548cfb-mbngd      1/1     Running             0          29s
+cdi-uploadproxy-66448dc879-rntxb   0/1     ContainerCreating   0          3s
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS              RESTARTS   AGE
+cdi-apiserver-74dcb7f4c5-6kb9p     1/1     Running             0          43s
+cdi-deployment-546cdb5fcd-9b4wg    0/1     ContainerCreating   0          43s
+cdi-operator-59c7548cfb-mbngd      1/1     Running             0          69s
+cdi-uploadproxy-66448dc879-rntxb   1/1     Running             0          43s
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS              RESTARTS   AGE
+cdi-apiserver-74dcb7f4c5-6kb9p     1/1     Running             0          44s
+cdi-deployment-546cdb5fcd-9b4wg    0/1     ContainerCreating   0          44s
+cdi-operator-59c7548cfb-mbngd      1/1     Running             0          70s
+cdi-uploadproxy-66448dc879-rntxb   1/1     Running             0          44s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS      AGE
+virt-api-5f9f64fd4d-7b5hh          1/1     Running   1 (42s ago)   2m26s
+virt-api-5f9f64fd4d-9nch4          1/1     Running   1 (42s ago)   2m26s
+virt-controller-7c8d6577b6-dl25m   1/1     Running   1 (47s ago)   110s
+virt-controller-7c8d6577b6-mz6bl   1/1     Running   1 (47s ago)   110s
+virt-handler-8kpfp                 0/1     Running   0             110s
+virt-handler-brjdj                 0/1     Running   0             110s
+virt-handler-rht9c                 0/1     Running   0             110s
+virt-operator-79456d8689-g8k9w     1/1     Running   0             3m18s
+virt-operator-79456d8689-p6czg     1/1     Running   0             3m18s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS      AGE
+virt-api-5f9f64fd4d-7b5hh          1/1     Running   1 (45s ago)   2m29s
+virt-api-5f9f64fd4d-9nch4          1/1     Running   1 (45s ago)   2m29s
+virt-controller-7c8d6577b6-dl25m   1/1     Running   1 (50s ago)   113s
+virt-controller-7c8d6577b6-mz6bl   1/1     Running   1 (50s ago)   113s
+virt-handler-8kpfp                 0/1     Running   0             113s
+virt-handler-brjdj                 0/1     Running   0             113s
+virt-handler-rht9c                 0/1     Running   0             113s
+virt-operator-79456d8689-g8k9w     1/1     Running   0             3m21s
+virt-operator-79456d8689-p6czg     1/1     Running   0             3m21s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS      AGE
+virt-api-5f9f64fd4d-7b5hh          1/1     Running   1 (46s ago)   2m30s
+virt-api-5f9f64fd4d-9nch4          1/1     Running   1 (46s ago)   2m30s
+virt-controller-7c8d6577b6-dl25m   1/1     Running   1 (51s ago)   114s
+virt-controller-7c8d6577b6-mz6bl   1/1     Running   1 (51s ago)   114s
+virt-handler-8kpfp                 0/1     Running   0             114s
+virt-handler-brjdj                 0/1     Running   0             114s
+virt-handler-rht9c                 0/1     Running   0             114s
+virt-operator-79456d8689-g8k9w     1/1     Running   0             3m22s
+virt-operator-79456d8689-p6czg     1/1     Running   0             3m22s
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS    RESTARTS   AGE
+cdi-apiserver-74dcb7f4c5-6kb9p     1/1     Running   0          51s
+cdi-deployment-546cdb5fcd-9b4wg    1/1     Running   0          51s
+cdi-operator-59c7548cfb-mbngd      1/1     Running   0          77s
+cdi-uploadproxy-66448dc879-rntxb   1/1     Running   0          51s
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS    RESTARTS   AGE
+cdi-apiserver-74dcb7f4c5-6kb9p     1/1     Running   0          52s
+cdi-deployment-546cdb5fcd-9b4wg    1/1     Running   0          52s
+cdi-operator-59c7548cfb-mbngd      1/1     Running   0          78s
+cdi-uploadproxy-66448dc879-rntxb   1/1     Running   0          52s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS      AGE
+virt-api-5f9f64fd4d-7b5hh          1/1     Running   1 (50s ago)   2m34s
+virt-api-5f9f64fd4d-9nch4          1/1     Running   1 (50s ago)   2m34s
+virt-controller-7c8d6577b6-dl25m   1/1     Running   1 (55s ago)   118s
+virt-controller-7c8d6577b6-mz6bl   1/1     Running   1 (55s ago)   118s
+virt-handler-8kpfp                 0/1     Running   0             118s
+virt-handler-brjdj                 0/1     Running   0             118s
+virt-handler-rht9c                 0/1     Running   0             118s
+virt-operator-79456d8689-g8k9w     1/1     Running   0             3m26s
+virt-operator-79456d8689-p6czg     1/1     Running   0             3m26s
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                               READY   STATUS    RESTARTS      AGE
+virt-api-5f9f64fd4d-7b5hh          1/1     Running   1 (51s ago)   2m35s
+virt-api-5f9f64fd4d-9nch4          1/1     Running   1 (51s ago)   2m35s
+virt-controller-7c8d6577b6-dl25m   1/1     Running   1 (56s ago)   119s
+virt-controller-7c8d6577b6-mz6bl   1/1     Running   1 (56s ago)   119s
+virt-handler-8kpfp                 0/1     Running   0             119s
+virt-handler-brjdj                 0/1     Running   0             119s
+virt-handler-rht9c                 0/1     Running   0             119s
+virt-operator-79456d8689-g8k9w     1/1     Running   0             3m27s
+virt-operator-79456d8689-p6czg     1/1     Running   0             3m27s
+[root@master ~]# dnf install nfs-utils -y
+Updating Subscription Management repositories.
+Last metadata expiration check: 1:01:07 ago on Friday 20 December 2024 12:41:29 PM.
+Dependencies resolved.
+=======================================================================================================================================================
+ Package                           Architecture              Version                            Repository                                        Size
+=======================================================================================================================================================
+Installing:
+ nfs-utils                         x86_64                    1:2.5.4-27.el9                     rhel-9-for-x86_64-baseos-rpms                    463 k
+Installing dependencies:
+ gssproxy                          x86_64                    0.8.4-7.el9                        rhel-9-for-x86_64-baseos-rpms                    114 k
+ keyutils                          x86_64                    1.6.3-1.el9                        rhel-9-for-x86_64-baseos-rpms                     78 k
+ libev                             x86_64                    4.33-5.el9                         rhel-9-for-x86_64-baseos-rpms                     56 k
+ libnfsidmap                       x86_64                    1:2.5.4-27.el9                     rhel-9-for-x86_64-baseos-rpms                     65 k
+ libverto-libev                    x86_64                    0.3.2-3.el9                        rhel-9-for-x86_64-baseos-rpms                     15 k
+ quota                             x86_64                    1:4.09-2.el9                       rhel-9-for-x86_64-baseos-rpms                    202 k
+ quota-nls                         noarch                    1:4.09-2.el9                       rhel-9-for-x86_64-baseos-rpms                     79 k
+ rpcbind                           x86_64                    1.2.6-7.el9                        rhel-9-for-x86_64-baseos-rpms                     62 k
+ sssd-nfs-idmap                    x86_64                    2.9.4-6.el9_4.1                    rhel-9-for-x86_64-baseos-rpms                     44 k
+
+Transaction Summary
+=======================================================================================================================================================
+Install  10 Packages
+
+Total download size: 1.2 M
+Installed size: 3.0 M
+Downloading Packages:
+(1/10): libverto-libev-0.3.2-3.el9.x86_64.rpm                                                                           30 kB/s |  15 kB     00:00
+(2/10): libev-4.33-5.el9.x86_64.rpm                                                                                    108 kB/s |  56 kB     00:00
+(3/10): keyutils-1.6.3-1.el9.x86_64.rpm                                                                                145 kB/s |  78 kB     00:00
+(4/10): rpcbind-1.2.6-7.el9.x86_64.rpm                                                                                 202 kB/s |  62 kB     00:00
+(5/10): sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64.rpm                                                                      141 kB/s |  44 kB     00:00
+(6/10): gssproxy-0.8.4-7.el9.x86_64.rpm                                                                                385 kB/s | 114 kB     00:00
+(7/10): nfs-utils-2.5.4-27.el9.x86_64.rpm                                                                              1.3 MB/s | 463 kB     00:00
+(8/10): libnfsidmap-2.5.4-27.el9.x86_64.rpm                                                                            160 kB/s |  65 kB     00:00
+(9/10): quota-4.09-2.el9.x86_64.rpm                                                                                    476 kB/s | 202 kB     00:00
+(10/10): quota-nls-4.09-2.el9.noarch.rpm                                                                               252 kB/s |  79 kB     00:00
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                  793 kB/s | 1.2 MB     00:01
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                               1/1
+  Installing       : libnfsidmap-1:2.5.4-27.el9.x86_64                                                                                            1/10
+  Installing       : quota-nls-1:4.09-2.el9.noarch                                                                                                2/10
+  Installing       : quota-1:4.09-2.el9.x86_64                                                                                                    3/10
+  Running scriptlet: rpcbind-1.2.6-7.el9.x86_64                                                                                                   4/10
+  Installing       : rpcbind-1.2.6-7.el9.x86_64                                                                                                   4/10
+  Running scriptlet: rpcbind-1.2.6-7.el9.x86_64                                                                                                   4/10
+Created symlink /etc/systemd/system/multi-user.target.wants/rpcbind.service → /usr/lib/systemd/system/rpcbind.service.
+Created symlink /etc/systemd/system/sockets.target.wants/rpcbind.socket → /usr/lib/systemd/system/rpcbind.socket.
+
+  Installing       : keyutils-1.6.3-1.el9.x86_64                                                                                                  5/10
+  Installing       : libev-4.33-5.el9.x86_64                                                                                                      6/10
+  Installing       : libverto-libev-0.3.2-3.el9.x86_64                                                                                            7/10
+  Installing       : gssproxy-0.8.4-7.el9.x86_64                                                                                                  8/10
+  Running scriptlet: gssproxy-0.8.4-7.el9.x86_64                                                                                                  8/10
+  Running scriptlet: nfs-utils-1:2.5.4-27.el9.x86_64                                                                                              9/10
+  Installing       : nfs-utils-1:2.5.4-27.el9.x86_64                                                                                              9/10
+  Running scriptlet: nfs-utils-1:2.5.4-27.el9.x86_64                                                                                              9/10
+  Installing       : sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                                                                                       10/10
+  Running scriptlet: sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                                                                                       10/10
+  Verifying        : libev-4.33-5.el9.x86_64                                                                                                      1/10
+  Verifying        : libverto-libev-0.3.2-3.el9.x86_64                                                                                            2/10
+  Verifying        : keyutils-1.6.3-1.el9.x86_64                                                                                                  3/10
+  Verifying        : rpcbind-1.2.6-7.el9.x86_64                                                                                                   4/10
+  Verifying        : sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                                                                                        5/10
+  Verifying        : gssproxy-0.8.4-7.el9.x86_64                                                                                                  6/10
+  Verifying        : libnfsidmap-1:2.5.4-27.el9.x86_64                                                                                            7/10
+  Verifying        : nfs-utils-1:2.5.4-27.el9.x86_64                                                                                              8/10
+  Verifying        : quota-1:4.09-2.el9.x86_64                                                                                                    9/10
+  Verifying        : quota-nls-1:4.09-2.el9.noarch                                                                                               10/10
+Installed products updated.
+
+Installed:
+  gssproxy-0.8.4-7.el9.x86_64           keyutils-1.6.3-1.el9.x86_64               libev-4.33-5.el9.x86_64       libnfsidmap-1:2.5.4-27.el9.x86_64
+  libverto-libev-0.3.2-3.el9.x86_64     nfs-utils-1:2.5.4-27.el9.x86_64           quota-1:4.09-2.el9.x86_64     quota-nls-1:4.09-2.el9.noarch
+  rpcbind-1.2.6-7.el9.x86_64            sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64
+
+Complete!
+[root@master ~]# mkdir -p /shares/registry
+chown -R nobody:nobody /shares/registry
+chmod -R 777 /shares/registry
+[root@master ~]# echo "/shares/registry  192.168.22.0/24(rw,sync,root_squash,no_subtree_check,no_wdelay)" > /etc/exports
+exportfs -rv
+exporting 192.168.22.0/24:/shares/registry
+[root@master ~]# vim /etc/exports
+[root@master ~]# sudo exportfs -a
+[root@master ~]# ssh worker1
+root@worker1's password:
+Last login: Sun Dec 15 18:04:25 2024 from 192.168.29.15
+[root@worker1 ~]# dnf install nfs-utils -y
+Updating Subscription Management repositories.
+Last metadata expiration check: 1:00:31 ago on Friday 20 December 2024 12:45:03                                                                        PM.
+Dependencies resolved.
+================================================================================
+ Package         Arch    Version           Repository                      Size
+================================================================================
+Installing:
+ nfs-utils       x86_64  1:2.5.4-27.el9    rhel-9-for-x86_64-baseos-rpms  463 k
+Installing dependencies:
+ gssproxy        x86_64  0.8.4-7.el9       rhel-9-for-x86_64-baseos-rpms  114 k
+ keyutils        x86_64  1.6.3-1.el9       rhel-9-for-x86_64-baseos-rpms   78 k
+ libev           x86_64  4.33-5.el9        rhel-9-for-x86_64-baseos-rpms   56 k
+ libnfsidmap     x86_64  1:2.5.4-27.el9    rhel-9-for-x86_64-baseos-rpms   65 k
+ libverto-libev  x86_64  0.3.2-3.el9       rhel-9-for-x86_64-baseos-rpms   15 k
+ quota           x86_64  1:4.09-2.el9      rhel-9-for-x86_64-baseos-rpms  202 k
+ quota-nls       noarch  1:4.09-2.el9      rhel-9-for-x86_64-baseos-rpms   79 k
+ rpcbind         x86_64  1.2.6-7.el9       rhel-9-for-x86_64-baseos-rpms   62 k
+ sssd-nfs-idmap  x86_64  2.9.4-6.el9_4.1   rhel-9-for-x86_64-baseos-rpms   44 k
+
+Transaction Summary
+================================================================================
+Install  10 Packages
+
+Total download size: 1.2 M
+Installed size: 3.0 M
+Downloading Packages:
+(1/10): libverto-libev-0.3.2-3.el9.x86_64.rpm    35 kB/s |  15 kB     00:00
+(2/10): libev-4.33-5.el9.x86_64.rpm             126 kB/s |  56 kB     00:00
+(3/10): keyutils-1.6.3-1.el9.x86_64.rpm         176 kB/s |  78 kB     00:00
+(4/10): rpcbind-1.2.6-7.el9.x86_64.rpm          178 kB/s |  62 kB     00:00
+(5/10): gssproxy-0.8.4-7.el9.x86_64.rpm         287 kB/s | 114 kB     00:00
+(6/10): sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64.r  93 kB/s |  44 kB     00:00
+(7/10): libnfsidmap-2.5.4-27.el9.x86_64.rpm     164 kB/s |  65 kB     00:00
+(8/10): nfs-utils-2.5.4-27.el9.x86_64.rpm       1.1 MB/s | 463 kB     00:00
+(9/10): quota-4.09-2.el9.x86_64.rpm             553 kB/s | 202 kB     00:00
+(10/10): quota-nls-4.09-2.el9.noarch.rpm        134 kB/s |  79 kB     00:00
+--------------------------------------------------------------------------------
+Total                                           666 kB/s | 1.2 MB     00:01
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1
+  Installing       : libnfsidmap-1:2.5.4-27.el9.x86_64                     1/10
+  Installing       : quota-nls-1:4.09-2.el9.noarch                         2/10
+  Installing       : quota-1:4.09-2.el9.x86_64                             3/10
+  Running scriptlet: rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Installing       : rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Running scriptlet: rpcbind-1.2.6-7.el9.x86_64                            4/10
+Created symlink /etc/systemd/system/multi-user.target.wants/rpcbind.service → /u                                                                       sr/lib/systemd/system/rpcbind.service.
+Created symlink /etc/systemd/system/sockets.target.wants/rpcbind.socket → /usr/l                                                                       ib/systemd/system/rpcbind.socket.
+
+  Installing       : keyutils-1.6.3-1.el9.x86_64                           5/10
+  Installing       : libev-4.33-5.el9.x86_64                               6/10
+  Installing       : libverto-libev-0.3.2-3.el9.x86_64                     7/10
+  Installing       : gssproxy-0.8.4-7.el9.x86_64                           8/10
+  Running scriptlet: gssproxy-0.8.4-7.el9.x86_64                           8/10
+  Running scriptlet: nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Installing       : nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Running scriptlet: nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Installing       : sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                10/10
+  Running scriptlet: sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                10/10
+  Verifying        : libev-4.33-5.el9.x86_64                               1/10
+  Verifying        : libverto-libev-0.3.2-3.el9.x86_64                     2/10
+  Verifying        : keyutils-1.6.3-1.el9.x86_64                           3/10
+  Verifying        : rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Verifying        : sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                 5/10
+  Verifying        : gssproxy-0.8.4-7.el9.x86_64                           6/10
+  Verifying        : libnfsidmap-1:2.5.4-27.el9.x86_64                     7/10
+  Verifying        : nfs-utils-1:2.5.4-27.el9.x86_64                       8/10
+  Verifying        : quota-1:4.09-2.el9.x86_64                             9/10
+  Verifying        : quota-nls-1:4.09-2.el9.noarch                        10/10
+Installed products updated.
+
+Installed:
+  gssproxy-0.8.4-7.el9.x86_64          keyutils-1.6.3-1.el9.x86_64
+  libev-4.33-5.el9.x86_64              libnfsidmap-1:2.5.4-27.el9.x86_64
+  libverto-libev-0.3.2-3.el9.x86_64    nfs-utils-1:2.5.4-27.el9.x86_64
+  quota-1:4.09-2.el9.x86_64            quota-nls-1:4.09-2.el9.noarch
+  rpcbind-1.2.6-7.el9.x86_64           sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64
+
+Complete!
+[root@worker1 ~]# ssh worker2
+root@worker2's password:
+Last login: Tue Oct 29 17:15:42 2024 from 192.168.29.15
+[root@worker2 ~]# dnf install nfs-utils -y
+Updating Subscription Management repositories.
+Last metadata expiration check: 0:51:06 ago on Friday 20 December 2024 12:55:02                                                                        PM.
+Dependencies resolved.
+================================================================================
+ Package         Arch    Version           Repository                      Size
+================================================================================
+Installing:
+ nfs-utils       x86_64  1:2.5.4-27.el9    rhel-9-for-x86_64-baseos-rpms  463 k
+Installing dependencies:
+ gssproxy        x86_64  0.8.4-7.el9       rhel-9-for-x86_64-baseos-rpms  114 k
+ keyutils        x86_64  1.6.3-1.el9       rhel-9-for-x86_64-baseos-rpms   78 k
+ libev           x86_64  4.33-5.el9        rhel-9-for-x86_64-baseos-rpms   56 k
+ libnfsidmap     x86_64  1:2.5.4-27.el9    rhel-9-for-x86_64-baseos-rpms   65 k
+ libverto-libev  x86_64  0.3.2-3.el9       rhel-9-for-x86_64-baseos-rpms   15 k
+ quota           x86_64  1:4.09-2.el9      rhel-9-for-x86_64-baseos-rpms  202 k
+ quota-nls       noarch  1:4.09-2.el9      rhel-9-for-x86_64-baseos-rpms   79 k
+ rpcbind         x86_64  1.2.6-7.el9       rhel-9-for-x86_64-baseos-rpms   62 k
+ sssd-nfs-idmap  x86_64  2.9.4-6.el9_4.1   rhel-9-for-x86_64-baseos-rpms   44 k
+
+Transaction Summary
+================================================================================
+Install  10 Packages
+
+Total download size: 1.2 M
+Installed size: 3.0 M
+Downloading Packages:
+(1/10): keyutils-1.6.3-1.el9.x86_64.rpm         219 kB/s |  78 kB     00:00
+(2/10): rpcbind-1.2.6-7.el9.x86_64.rpm           51 kB/s |  62 kB     00:01
+(3/10): libverto-libev-0.3.2-3.el9.x86_64.rpm   8.8 kB/s |  15 kB     00:01
+(4/10): libev-4.33-5.el9.x86_64.rpm              31 kB/s |  56 kB     00:01
+(5/10): sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64.r 116 kB/s |  44 kB     00:00
+(6/10): libnfsidmap-2.5.4-27.el9.x86_64.rpm     199 kB/s |  65 kB     00:00
+(7/10): gssproxy-0.8.4-7.el9.x86_64.rpm         287 kB/s | 114 kB     00:00
+(8/10): nfs-utils-2.5.4-27.el9.x86_64.rpm       1.3 MB/s | 463 kB     00:00
+(9/10): quota-nls-4.09-2.el9.noarch.rpm         245 kB/s |  79 kB     00:00
+(10/10): quota-4.09-2.el9.x86_64.rpm            470 kB/s | 202 kB     00:00
+--------------------------------------------------------------------------------
+Total                                           465 kB/s | 1.2 MB     00:02
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1
+  Installing       : libnfsidmap-1:2.5.4-27.el9.x86_64                     1/10
+  Installing       : quota-nls-1:4.09-2.el9.noarch                         2/10
+  Installing       : quota-1:4.09-2.el9.x86_64                             3/10
+  Running scriptlet: rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Installing       : rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Running scriptlet: rpcbind-1.2.6-7.el9.x86_64                            4/10
+Created symlink /etc/systemd/system/multi-user.target.wants/rpcbind.service → /u                                                                       sr/lib/systemd/system/rpcbind.service.
+Created symlink /etc/systemd/system/sockets.target.wants/rpcbind.socket → /usr/l                                                                       ib/systemd/system/rpcbind.socket.
+
+  Installing       : keyutils-1.6.3-1.el9.x86_64                           5/10
+  Installing       : libev-4.33-5.el9.x86_64                               6/10
+  Installing       : libverto-libev-0.3.2-3.el9.x86_64                     7/10
+  Installing       : gssproxy-0.8.4-7.el9.x86_64                           8/10
+  Running scriptlet: gssproxy-0.8.4-7.el9.x86_64                           8/10
+  Running scriptlet: nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Installing       : nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Running scriptlet: nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Installing       : sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                10/10
+  Running scriptlet: sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                10/10
+  Verifying        : libev-4.33-5.el9.x86_64                               1/10
+  Verifying        : libverto-libev-0.3.2-3.el9.x86_64                     2/10
+  Verifying        : keyutils-1.6.3-1.el9.x86_64                           3/10
+  Verifying        : rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Verifying        : sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                 5/10
+  Verifying        : gssproxy-0.8.4-7.el9.x86_64                           6/10
+  Verifying        : libnfsidmap-1:2.5.4-27.el9.x86_64                     7/10
+  Verifying        : nfs-utils-1:2.5.4-27.el9.x86_64                       8/10
+  Verifying        : quota-1:4.09-2.el9.x86_64                             9/10
+  Verifying        : quota-nls-1:4.09-2.el9.noarch                        10/10
+Installed products updated.
+
+Installed:
+  gssproxy-0.8.4-7.el9.x86_64          keyutils-1.6.3-1.el9.x86_64
+  libev-4.33-5.el9.x86_64              libnfsidmap-1:2.5.4-27.el9.x86_64
+  libverto-libev-0.3.2-3.el9.x86_64    nfs-utils-1:2.5.4-27.el9.x86_64
+  quota-1:4.09-2.el9.x86_64            quota-nls-1:4.09-2.el9.noarch
+  rpcbind-1.2.6-7.el9.x86_64           sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64
+
+Complete!
+[root@worker2 ~]# ssh worker3
+root@worker3's password:
+Last login: Tue Oct 29 17:16:37 2024 from 192.168.29.15
+[root@worker3 ~]# dnf install nfs-utils -y
+Updating Subscription Management repositories.
+Last metadata expiration check: 0:55:58 ago on Friday 20 December 2024 12:50:40                                                                        PM.
+Dependencies resolved.
+================================================================================
+ Package         Arch    Version           Repository                      Size
+================================================================================
+Installing:
+ nfs-utils       x86_64  1:2.5.4-27.el9    rhel-9-for-x86_64-baseos-rpms  463 k
+Installing dependencies:
+ gssproxy        x86_64  0.8.4-7.el9       rhel-9-for-x86_64-baseos-rpms  114 k
+ keyutils        x86_64  1.6.3-1.el9       rhel-9-for-x86_64-baseos-rpms   78 k
+ libev           x86_64  4.33-5.el9        rhel-9-for-x86_64-baseos-rpms   56 k
+ libnfsidmap     x86_64  1:2.5.4-27.el9    rhel-9-for-x86_64-baseos-rpms   65 k
+ libverto-libev  x86_64  0.3.2-3.el9       rhel-9-for-x86_64-baseos-rpms   15 k
+ quota           x86_64  1:4.09-2.el9      rhel-9-for-x86_64-baseos-rpms  202 k
+ quota-nls       noarch  1:4.09-2.el9      rhel-9-for-x86_64-baseos-rpms   79 k
+ rpcbind         x86_64  1.2.6-7.el9       rhel-9-for-x86_64-baseos-rpms   62 k
+ sssd-nfs-idmap  x86_64  2.9.4-6.el9_4.1   rhel-9-for-x86_64-baseos-rpms   44 k
+
+Transaction Summary
+================================================================================
+Install  10 Packages
+
+Total download size: 1.2 M
+Installed size: 3.0 M
+Downloading Packages:
+(1/10): libev-4.33-5.el9.x86_64.rpm             172 kB/s |  56 kB     00:00
+(2/10): rpcbind-1.2.6-7.el9.x86_64.rpm          216 kB/s |  62 kB     00:00
+(3/10): libverto-libev-0.3.2-3.el9.x86_64.rpm    18 kB/s |  15 kB     00:00
+(4/10): keyutils-1.6.3-1.el9.x86_64.rpm          93 kB/s |  78 kB     00:00
+(5/10): sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64.r 150 kB/s |  44 kB     00:00
+(6/10): libnfsidmap-2.5.4-27.el9.x86_64.rpm     225 kB/s |  65 kB     00:00
+(7/10): gssproxy-0.8.4-7.el9.x86_64.rpm         366 kB/s | 114 kB     00:00
+(8/10): nfs-utils-2.5.4-27.el9.x86_64.rpm       1.4 MB/s | 463 kB     00:00
+(9/10): quota-nls-4.09-2.el9.noarch.rpm         268 kB/s |  79 kB     00:00
+(10/10): quota-4.09-2.el9.x86_64.rpm            656 kB/s | 202 kB     00:00
+--------------------------------------------------------------------------------
+Total                                           813 kB/s | 1.2 MB     00:01
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1
+  Installing       : libnfsidmap-1:2.5.4-27.el9.x86_64                     1/10
+  Installing       : quota-nls-1:4.09-2.el9.noarch                         2/10
+  Installing       : quota-1:4.09-2.el9.x86_64                             3/10
+  Running scriptlet: rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Installing       : rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Running scriptlet: rpcbind-1.2.6-7.el9.x86_64                            4/10
+Created symlink /etc/systemd/system/multi-user.target.wants/rpcbind.service → /u                                                                       sr/lib/systemd/system/rpcbind.service.
+Created symlink /etc/systemd/system/sockets.target.wants/rpcbind.socket → /usr/l                                                                       ib/systemd/system/rpcbind.socket.
+
+  Installing       : keyutils-1.6.3-1.el9.x86_64                           5/10
+  Installing       : libev-4.33-5.el9.x86_64                               6/10
+  Installing       : libverto-libev-0.3.2-3.el9.x86_64                     7/10
+  Installing       : gssproxy-0.8.4-7.el9.x86_64                           8/10
+  Running scriptlet: gssproxy-0.8.4-7.el9.x86_64                           8/10
+  Running scriptlet: nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Installing       : nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Running scriptlet: nfs-utils-1:2.5.4-27.el9.x86_64                       9/10
+  Installing       : sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                10/10
+  Running scriptlet: sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                10/10
+  Verifying        : libev-4.33-5.el9.x86_64                               1/10
+  Verifying        : libverto-libev-0.3.2-3.el9.x86_64                     2/10
+  Verifying        : keyutils-1.6.3-1.el9.x86_64                           3/10
+  Verifying        : rpcbind-1.2.6-7.el9.x86_64                            4/10
+  Verifying        : sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64                 5/10
+  Verifying        : gssproxy-0.8.4-7.el9.x86_64                           6/10
+  Verifying        : libnfsidmap-1:2.5.4-27.el9.x86_64                     7/10
+  Verifying        : nfs-utils-1:2.5.4-27.el9.x86_64                       8/10
+  Verifying        : quota-1:4.09-2.el9.x86_64                             9/10
+  Verifying        : quota-nls-1:4.09-2.el9.noarch                        10/10
+Installed products updated.
+
+Installed:
+  gssproxy-0.8.4-7.el9.x86_64          keyutils-1.6.3-1.el9.x86_64
+  libev-4.33-5.el9.x86_64              libnfsidmap-1:2.5.4-27.el9.x86_64
+  libverto-libev-0.3.2-3.el9.x86_64    nfs-utils-1:2.5.4-27.el9.x86_64
+  quota-1:4.09-2.el9.x86_64            quota-nls-1:4.09-2.el9.noarch
+  rpcbind-1.2.6-7.el9.x86_64           sssd-nfs-idmap-2.9.4-6.el9_4.1.x86_64
+
+Complete!
+[root@worker3 ~]#
+logout
+Connection to worker3 closed.
+[root@worker2 ~]#
+logout
+Connection to worker2 closed.
+[root@worker1 ~]#
+logout
+Connection to worker1 closed.
+[root@master ~]# sudo systemctl enable nfs-server
+sudo systemctl start nfs-server
+Created symlink /etc/systemd/system/multi-user.target.wants/nfs-server.service →                                                                        /usr/lib/systemd/system/nfs-server.service.
+[root@master ~]# sudo exportfs -rav
+exporting *:/shares/registry
+[root@master ~]# ssh worker1
+root@worker1's password:
+Last login: Fri Dec 20 13:45:29 2024 from 192.168.29.15
+[root@worker1 ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.29.16/24
+caliafb381867e1@if2 UP             fe80::ecee:eeff:feee:eeee/64
+cali303c6c5c07d@if2 UP             fe80::ecee:eeff:feee:eeee/64
+tunl0@NONE       UNKNOWN        172.16.102.128/32
+cali6fb28ba5cbc@if3 UP             fe80::ecee:eeff:feee:eeee/64
+cali0b2a4ebc6dc@if3 UP             fe80::ecee:eeff:feee:eeee/64
+cali987ef292ef3@if3 UP             fe80::ecee:eeff:feee:eeee/64
+calic79d7d22ad3@if3 UP             fe80::ecee:eeff:feee:eeee/64
+[root@worker1 ~]# showmount -e  192.168.29.15
+Export list for 192.168.29.15:
+/shares/registry *
+[root@worker1 ~]# ssh worker2
+root@worker2's password:
+Last login: Fri Dec 20 13:46:03 2024 from 192.168.29.16
+[root@worker2 ~]# showmount -e  192.168.29.15
+Export list for 192.168.29.15:
+/shares/registry *
+[root@worker2 ~]# ssh worker3
+root@worker3's password:
+Last login: Fri Dec 20 13:46:26 2024 from 192.168.29.17
+[root@worker3 ~]# showmount -e  192.168.29.15
+Export list for 192.168.29.15:
+/shares/registry *
+[root@worker3 ~]#
+logout
+Connection to worker3 closed.
+[root@worker2 ~]#
+logout
+Connection to worker2 closed.
+[root@worker1 ~]#
+logout
+Connection to worker1 closed.
+[root@master ~]# git clone https://github.com/kubernetes-sigs/nfs-subdir-externa                                                                       l-provisioner.git
+-bash: git: command not found
+[root@master ~]# dnf install wget git
+Updating Subscription Management repositories.
+Last metadata expiration check: 1:11:42 ago on Friday 20 December 2024 12:41:29                                                                        PM.
+Package wget-1.21.1-8.el9_4.x86_64 is already installed.
+Dependencies resolved.
+================================================================================
+ Package          Arch   Version         Repository                        Size
+================================================================================
+Installing:
+ git              x86_64 2.43.5-2.el9_5  rhel-9-for-x86_64-appstream-rpms  55 k
+Installing dependencies:
+ emacs-filesystem noarch 1:27.2-10.el9_4 rhel-9-for-x86_64-appstream-rpms 9.3 k
+ git-core         x86_64 2.43.5-2.el9_5  rhel-9-for-x86_64-appstream-rpms 4.4 M
+ git-core-doc     noarch 2.43.5-2.el9_5  rhel-9-for-x86_64-appstream-rpms 2.9 M
+ perl-DynaLoader  x86_64 1.47-481.el9    rhel-9-for-x86_64-appstream-rpms  26 k
+ perl-Error       noarch 1:0.17029-7.el9 rhel-9-for-x86_64-appstream-rpms  46 k
+ perl-File-Find   noarch 1.37-481.el9    rhel-9-for-x86_64-appstream-rpms  26 k
+ perl-Git         noarch 2.43.5-2.el9_5  rhel-9-for-x86_64-appstream-rpms  39 k
+ perl-TermReadKey x86_64 2.38-11.el9     rhel-9-for-x86_64-appstream-rpms  40 k
+ perl-lib         x86_64 0.65-481.el9    rhel-9-for-x86_64-appstream-rpms  15 k
+
+Transaction Summary
+================================================================================
+Install  10 Packages
+
+Total download size: 7.6 M
+Installed size: 38 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/10): perl-TermReadKey-2.38-11.el9.x86_64.rpm 113 kB/s |  40 kB     00:00
+(2/10): perl-Error-0.17029-7.el9.noarch.rpm     125 kB/s |  46 kB     00:00
+(3/10): perl-File-Find-1.37-481.el9.noarch.rpm   52 kB/s |  26 kB     00:00
+(4/10): perl-lib-0.65-481.el9.x86_64.rpm         49 kB/s |  15 kB     00:00
+(5/10): perl-DynaLoader-1.47-481.el9.x86_64.rpm  81 kB/s |  26 kB     00:00
+(6/10): emacs-filesystem-27.2-10.el9_4.noarch.r  29 kB/s | 9.3 kB     00:00
+(7/10): git-2.43.5-2.el9_5.x86_64.rpm           173 kB/s |  55 kB     00:00
+(8/10): perl-Git-2.43.5-2.el9_5.noarch.rpm      120 kB/s |  39 kB     00:00
+(9/10): git-core-2.43.5-2.el9_5.x86_64.rpm      5.3 MB/s | 4.4 MB     00:00
+(10/10): git-core-doc-2.43.5-2.el9_5.noarch.rpm 3.3 MB/s | 2.9 MB     00:00
+--------------------------------------------------------------------------------
+Total                                           4.5 MB/s | 7.6 MB     00:01
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1
+  Installing       : git-core-2.43.5-2.el9_5.x86_64                        1/10
+  Installing       : git-core-doc-2.43.5-2.el9_5.noarch                    2/10
+  Installing       : emacs-filesystem-1:27.2-10.el9_4.noarch               3/10
+  Installing       : perl-DynaLoader-1.47-481.el9.x86_64                   4/10
+  Installing       : perl-TermReadKey-2.38-11.el9.x86_64                   5/10
+  Installing       : perl-lib-0.65-481.el9.x86_64                          6/10
+  Installing       : perl-File-Find-1.37-481.el9.noarch                    7/10
+  Installing       : perl-Error-1:0.17029-7.el9.noarch                     8/10
+  Installing       : git-2.43.5-2.el9_5.x86_64                             9/10
+  Installing       : perl-Git-2.43.5-2.el9_5.noarch                       10/10
+  Running scriptlet: perl-Git-2.43.5-2.el9_5.noarch                       10/10
+  Verifying        : perl-Error-1:0.17029-7.el9.noarch                     1/10
+  Verifying        : perl-TermReadKey-2.38-11.el9.x86_64                   2/10
+  Verifying        : perl-File-Find-1.37-481.el9.noarch                    3/10
+  Verifying        : perl-lib-0.65-481.el9.x86_64                          4/10
+  Verifying        : perl-DynaLoader-1.47-481.el9.x86_64                   5/10
+  Verifying        : emacs-filesystem-1:27.2-10.el9_4.noarch               6/10
+  Verifying        : git-2.43.5-2.el9_5.x86_64                             7/10
+  Verifying        : git-core-2.43.5-2.el9_5.x86_64                        8/10
+  Verifying        : git-core-doc-2.43.5-2.el9_5.noarch                    9/10
+  Verifying        : perl-Git-2.43.5-2.el9_5.noarch                       10/10
+Installed products updated.
+
+Installed:
+  emacs-filesystem-1:27.2-10.el9_4.noarch   git-2.43.5-2.el9_5.x86_64
+  git-core-2.43.5-2.el9_5.x86_64            git-core-doc-2.43.5-2.el9_5.noarch
+  perl-DynaLoader-1.47-481.el9.x86_64       perl-Error-1:0.17029-7.el9.noarch
+  perl-File-Find-1.37-481.el9.noarch        perl-Git-2.43.5-2.el9_5.noarch
+  perl-TermReadKey-2.38-11.el9.x86_64       perl-lib-0.65-481.el9.x86_64
+
+Complete!
+[root@master ~]# git clone https://github.com/kubernetes-sigs/nfs-subdir-externa                                                                       l-provisioner.git
+Cloning into 'nfs-subdir-external-provisioner'...
+remote: Enumerating objects: 8174, done.
+remote: Counting objects: 100% (1669/1669), done.
+remote: Compressing objects: 100% (274/274), done.
+remote: Total 8174 (delta 1513), reused 1395 (delta 1395), pack-reused 6505 (fro                                                                       m 2)
+Receiving objects: 100% (8174/8174), 9.77 MiB | 6.98 MiB/s, done.
+Resolving deltas: 100% (4702/4702), done.
+[root@master ~]# ls -l
+total 284
+-rw-------.  1 root root   1006 Oct 29 12:17 anaconda-ks.cfg
+-rw-r--r--   1 root root    475 Dec 16 23:18 app1.yml
+-rw-r--r--   1 root root    475 Dec 16 23:18 app2.yml
+-rw-r--r--   1 root root    696 Dec 17 00:55 app-ingress2.yml
+-rw-r--r--   1 root root    593 Dec 16 23:24 app-ingress.yml
+-rw-r--r--   1 root root 253923 Oct 29 17:02 calico.yaml
+-rw-r--r--   1 root root    545 Dec 16 00:54 echo_ingress.yaml
+drwxr-xr-x  10 root root   4096 Dec 20 14:02 nfs-subdir-external-provisioner
+-rw-r--r--   1 root root    515 Dec 17 00:35 staging-issuer.yaml
+-rw-r--r--   1 root root    363 Dec 17 00:38 staging.yml
+[root@master ~]# cd nfs-subdir-external-provisioner/
+[root@master nfs-subdir-external-provisioner]# ls
+CHANGELOG.md        CONTRIBUTING.md       go.mod    OWNERS_ALIASES     vendor
+charts              deploy                go.sum    README.md
+cloudbuild.yaml     docker                LICENSE   RELEASE.md
+cmd                 Dockerfile            Makefile  release-tools
+code-of-conduct.md  Dockerfile.multiarch  OWNERS    SECURITY_CONTACTS
+[root@master nfs-subdir-external-provisioner]# cd deploy/
+[root@master deploy]# ll
+total 24
+-rw-r--r-- 1 root root  246 Dec 20 14:02 class.yaml
+-rw-r--r-- 1 root root 1069 Dec 20 14:02 deployment.yaml
+-rw-r--r-- 1 root root   64 Dec 20 14:02 kustomization.yaml
+drwxr-xr-x 2 root root  187 Dec 20 14:02 objects
+-rw-r--r-- 1 root root 1900 Dec 20 14:02 rbac.yaml
+-rw-r--r-- 1 root root  190 Dec 20 14:02 test-claim.yaml
+-rw-r--r-- 1 root root  401 Dec 20 14:02 test-pod.yaml
+[root@master deploy]# cat class.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-client
+provisioner: k8s-sigs.io/nfs-subdir-external-provisioner # or choose another name, must match deployment's env PROVISIONER_NAME'
+parameters:
+  archiveOnDelete: "false"
+[root@master deploy]# rbac.yaml
+-bash: rbac.yaml: command not found
+[root@master deploy]# kubectl apply -f class.yaml
+storageclass.storage.k8s.io/nfs-client created
+[root@master deploy]# kubectl apply -f rbac.yaml
+serviceaccount/nfs-client-provisioner created
+clusterrole.rbac.authorization.k8s.io/nfs-client-provisioner-runner created
+clusterrolebinding.rbac.authorization.k8s.io/run-nfs-client-provisioner created
+role.rbac.authorization.k8s.io/leader-locking-nfs-client-provisioner created
+rolebinding.rbac.authorization.k8s.io/leader-locking-nfs-client-provisioner created
+[root@master deploy]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.29.15/24
+cali3db4182a67b@if2 UP             fe80::ecee:eeff:feee:eeee/64
+cali16362734945@if2 UP             fe80::ecee:eeff:feee:eeee/64
+tunl0@NONE       UNKNOWN        172.16.204.64/32
+cali78acfed1c95@if3 UP             fe80::ecee:eeff:feee:eeee/64
+cali47c9efa4866@if3 UP             fe80::ecee:eeff:feee:eeee/64
+calice8e7eb2a46@if3 UP             fe80::ecee:eeff:feee:eeee/64
+cali8bc97a49598@if3 UP             fe80::ecee:eeff:feee:eeee/64
+[root@master deploy]# vim deployment.yaml
+[root@master deploy]# kubectl apply -f  deployment.yaml
+deployment.apps/nfs-client-provisioner created
+[root@master deploy]# kubectl get sc
+NAME         PROVISIONER                                   RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client   k8s-sigs.io/nfs-subdir-external-provisioner   Delete          Immediate           false                  2m25s
+[root@master deploy]# kubectl patch storageclass nfs-client -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+storageclass.storage.k8s.io/nfs-client patched
+[root@master deploy]# kubectl get sc
+NAME                   PROVISIONER                                   RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client (default)   k8s-sigs.io/nfs-subdir-external-provisioner   Delete          Immediate           false                  3m13s
+[root@master deploy]# cd ~
+[root@master ~]# export VERSION=$(curl https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100     7  100     7    0     0     59      0 --:--:-- --:--:-- --:--:--    59
+[root@master ~]# wget https://github.com/kubevirt/kubevirt/releases/download/${VERSION}/virtctl-${VERSION}-linux-amd64
+--2024-12-20 14:12:04--  https://github.com/kubevirt/kubevirt/releases/download/v1.4.0/virtctl-v1.4.0-linux-amd64
+
+Resolving github.com (github.com)... 20.207.73.82
+Connecting to github.com (github.com)|20.207.73.82|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://objects.githubusercontent.com/github-production-release-asset-2e65be/76686583/7134cb6c-70e4-4b75-b1d6-c46466b78168?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20241220%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241220T084205Z&X-Amz-Expires=300&X-Amz-Signature=93623f5cfde6905ecffa5fac9787339365b0db72062cb5b3c799c8bf08357da7&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3Dvirtctl-v1.4.0-linux-amd64&response-content-type=application%2Foctet-stream [following]
+--2024-12-20 14:12:05--  https://objects.githubusercontent.com/github-production-release-asset-2e65be/76686583/7134cb6c-70e4-4b75-b1d6-c46466b78168?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20241220%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241220T084205Z&X-Amz-Expires=300&X-Amz-Signature=93623f5cfde6905ecffa5fac9787339365b0db72062cb5b3c799c8bf08357da7&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3Dvirtctl-v1.4.0-linux-amd64&response-content-type=application%2Foctet-stream
+Resolving objects.githubusercontent.com (objects.githubusercontent.com)... 185.199.108.133, 185.199.110.133, 185.199.111.133, ...
+Connecting to objects.githubusercontent.com (objects.githubusercontent.com)|185.199.108.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 58654872 (56M) [application/octet-stream]
+Saving to: ‘virtctl-v1.4.0-linux-amd64’
+
+virtctl-v1.4.0-linux-amd64            100%[========================================================================>]  55.94M  9.27MB/s    in 6.1s
+
+2024-12-20 14:12:13 (9.18 MB/s) - ‘virtctl-v1.4.0-linux-amd64’ saved [58654872/58654872]
+
+[root@master ~]#
+[root@master ~]# ls -l
+total 57568
+-rw-------.  1 root root     1006 Oct 29 12:17 anaconda-ks.cfg
+-rw-r--r--   1 root root      475 Dec 16 23:18 app1.yml
+-rw-r--r--   1 root root      475 Dec 16 23:18 app2.yml
+-rw-r--r--   1 root root      696 Dec 17 00:55 app-ingress2.yml
+-rw-r--r--   1 root root      593 Dec 16 23:24 app-ingress.yml
+-rw-r--r--   1 root root   253923 Oct 29 17:02 calico.yaml
+-rw-r--r--   1 root root      545 Dec 16 00:54 echo_ingress.yaml
+drwxr-xr-x  10 root root     4096 Dec 20 14:02 nfs-subdir-external-provisioner
+-rw-r--r--   1 root root      515 Dec 17 00:35 staging-issuer.yaml
+-rw-r--r--   1 root root      363 Dec 17 00:38 staging.yml
+-rw-r--r--   1 root root 58654872 Nov 13 15:42 virtctl-v1.4.0-linux-amd64
+[root@master ~]# mc virtctl-v1.4.0-linux-amd64 /bin/virtctl
+-bash: mc: command not found
+[root@master ~]# mv virtctl-v1.4.0-linux-amd64 /bin/virtctl
+[root@master ~]# chmod u+x /bin/virtctl
+[root@master ~]# virtctl
+Available Commands:
+  addvolume         add a volume to a running VM
+  adm               Administrate KubeVirt configuration.
+  completion        Generate the autocompletion script for the specified shell
+  console           Connect to a console of a virtual machine instance.
+  create            Create a manifest for the specified Kind.
+  credentials       Manipulate credentials on a virtual machine.
+  expand            Return the VirtualMachine object with expanded instancetype and preference.
+  expose            Expose a virtual machine instance, virtual machine, or virtual machine instance replica set as a new service.
+  fslist            Return full list of filesystems available on the guest machine.
+  guestfs           Start a shell into the libguestfs pod
+  guestosinfo       Return guest agent info about operating system.
+  help              Help about any command
+  image-upload      Upload a VM image to a DataVolume/PersistentVolumeClaim.
+  memory-dump       Dump the memory of a running VM to a pvc
+  migrate           Migrate a virtual machine.
+  migrate-cancel    Cancel migration of a virtual machine.
+  pause             Pause a virtual machine
+  permitted-devices List the permitted devices for vmis.
+  port-forward      Forward local ports to a virtualmachine or virtualmachineinstance.
+  removevolume      remove a volume from a running VM
+  restart           Restart a virtual machine.
+  scp               SCP files from/to a virtual machine instance.
+  soft-reboot       Soft reboot a virtual machine instance
+  ssh               Open a SSH connection to a virtual machine instance.
+  start             Start a virtual machine.
+  stop              Stop a virtual machine.
+  unpause           Unpause a virtual machine
+  usbredir          Redirect an USB device to a virtual machine instance.
+  userlist          Return full list of logged in users on the guest machine.
+  version           Print the client and server version information.
+  vmexport          Export a VM volume.
+  vnc               Open a vnc connection to a virtual machine instance.
+
+Use "virtctl <command> --help" for more information about a given command.
+Use "virtctl options" for a list of global command-line options (applies to all commands).
+[root@master ~]# vi application.yml
+[root@master ~]# kubectl apply -f application.yml
+virtualmachine.kubevirt.io/vm-dv created
+[root@master ~]# kubectl get vm
+NAME    AGE   STATUS         READY
+vm-dv   8s    Provisioning   False
+[root@master ~]# kubectl get vmi
+No resources found in default namespace.
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS              RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running             1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running             1 (104m ago)   3d14h
+importer-src-dv                          0/1     ContainerCreating   0              14s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running             0              7m37s
+[root@master ~]# kubectl get vmi
+No resources found in default namespace.
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS              RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running             1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running             1 (104m ago)   3d14h
+importer-src-dv                          0/1     ContainerCreating   0              26s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running             0              7m49s
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS              RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running             1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running             1 (104m ago)   3d14h
+importer-src-dv                          0/1     ContainerCreating   0              27s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running             0              7m50s
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS              RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running             1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running             1 (104m ago)   3d14h
+importer-src-dv                          0/1     ContainerCreating   0              28s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running             0              7m51s
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS              RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running             1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running             1 (104m ago)   3d14h
+importer-src-dv                          0/1     ContainerCreating   0              29s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running             0              7m52s
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS              RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running             1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running             1 (104m ago)   3d14h
+importer-src-dv                          0/1     ContainerCreating   0              30s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running             0              7m53s
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS    RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running   1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running   1 (104m ago)   3d14h
+importer-src-dv                          1/1     Running   0              31s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running   0              7m54s
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS    RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running   1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running   1 (104m ago)   3d14h
+importer-src-dv                          1/1     Running   0              32s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running   0              7m55s
+[root@master ~]# kubectl get vmi
+No resources found in default namespace.
+[root@master ~]# kubectl get vm\
+> ^C
+[root@master ~]# kubectl get vm
+NAME    AGE   STATUS            READY
+vm-dv   38s   DataVolumeError   False
+[root@master ~]# kubectl get vm
+NAME    AGE   STATUS            READY
+vm-dv   40s   DataVolumeError   False
+[root@master ~]# kubectl get vmi
+No resources found in default namespace.
+[root@master ~]# kubectl get vm
+NAME    AGE   STATUS            READY
+vm-dv   43s   DataVolumeError   False
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS    RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running   1 (104m ago)   3d14h
+app2-b694f4699-hjqw9                     1/1     Running   1 (104m ago)   3d14h
+importer-src-dv                          0/1     Error     1 (16s ago)    47s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running   0              8m10s
+[root@master ~]# kubectl logs importer-src-dv
+I1220 08:44:28.513856       1 importer.go:107] Starting importer
+I1220 08:44:28.514440       1 importer.go:182] begin import process
+I1220 08:44:28.514508       1 registry-datasource.go:190] Copying proxy certs
+I1220 08:44:28.514549       1 registry-datasource.go:61] Error creating allCertDir open /proxycerts/: no such file or directory
+I1220 08:44:28.514598       1 data-processor.go:348] Calculating available size
+I1220 08:44:28.515038       1 data-processor.go:360] Checking out file system volume size.
+I1220 08:44:28.515360       1 data-processor.go:367] Request image size not empty.
+I1220 08:44:28.515383       1 data-processor.go:373] Target size 2272469469.
+I1220 08:44:28.515391       1 data-processor.go:247] New phase: TransferScratch
+I1220 08:44:28.516005       1 registry-datasource.go:100] Copying registry image to scratch space.
+I1220 08:44:28.516025       1 transport.go:193] Downloading image from 'docker://registry:5000/kubevirt/alpine-container-disk-demo:devel', copying file from 'disk' to '/scratch'
+E1220 08:44:28.527720       1 transport.go:79] Could not create image reference: pinging container registry registry:5000: Get "https://registry:5000/v2/": dial tcp: lookup registry on 10.96.0.10:53: no such host
+E1220 08:44:28.527772       1 data-processor.go:243] failed to pull image: pinging container registry registry:5000: Get "https://registry:5000/v2/": dial tcp: lookup registry on 10.96.0.10:53: no such host
+Failed to read registry image
+kubevirt.io/containerized-data-importer/pkg/importer.(*RegistryDataSource).Transfer
+        pkg/importer/registry-datasource.go:103
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).initDefaultPhases.func2
+        pkg/importer/data-processor.go:173
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).ProcessDataWithPause
+        pkg/importer/data-processor.go:240
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).ProcessData
+        pkg/importer/data-processor.go:149
+main.handleImport
+        cmd/cdi-importer/importer.go:188
+main.main
+        cmd/cdi-importer/importer.go:148
+runtime.main
+        GOROOT/src/runtime/proc.go:271
+runtime.goexit
+        src/runtime/asm_amd64.s:1695
+Unable to transfer source data to scratch space
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).initDefaultPhases.func2
+        pkg/importer/data-processor.go:178
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).ProcessDataWithPause
+        pkg/importer/data-processor.go:240
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).ProcessData
+        pkg/importer/data-processor.go:149
+main.handleImport
+        cmd/cdi-importer/importer.go:188
+main.main
+        cmd/cdi-importer/importer.go:148
+runtime.main
+        GOROOT/src/runtime/proc.go:271
+runtime.goexit
+        src/runtime/asm_amd64.s:1695
+E1220 08:44:28.527836       1 importer.go:192] failed to pull image: pinging container registry registry:5000: Get "https://registry:5000/v2/": dial tcp: lookup registry on 10.96.0.10:53: no such host
+Failed to read registry image
+kubevirt.io/containerized-data-importer/pkg/importer.(*RegistryDataSource).Transfer
+        pkg/importer/registry-datasource.go:103
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).initDefaultPhases.func2
+        pkg/importer/data-processor.go:173
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).ProcessDataWithPause
+        pkg/importer/data-processor.go:240
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).ProcessData
+        pkg/importer/data-processor.go:149
+main.handleImport
+        cmd/cdi-importer/importer.go:188
+main.main
+        cmd/cdi-importer/importer.go:148
+runtime.main
+        GOROOT/src/runtime/proc.go:271
+runtime.goexit
+        src/runtime/asm_amd64.s:1695
+Unable to transfer source data to scratch space
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).initDefaultPhases.func2
+        pkg/importer/data-processor.go:178
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).ProcessDataWithPause
+        pkg/importer/data-processor.go:240
+kubevirt.io/containerized-data-importer/pkg/importer.(*DataProcessor).ProcessData
+        pkg/importer/data-processor.go:149
+main.handleImport
+        cmd/cdi-importer/importer.go:188
+main.main
+        cmd/cdi-importer/importer.go:148
+runtime.main
+        GOROOT/src/runtime/proc.go:271
+runtime.goexit
+        src/runtime/asm_amd64.s:1695
+[root@master ~]# kubectl exec -it importer-src-dv -- curl http://registry:5000/v2/
+curl: (6) Could not resolve host: registry
+command terminated with exit code 6
+[root@master ~]#
+[root@master ~]# kubectl get svc
+NAME           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+app1-service   NodePort    10.110.194.122   <none>        80:31083/TCP   3d15h
+app2-service   ClusterIP   10.106.34.100    <none>        80/TCP         3d15h
+kubernetes     ClusterIP   10.96.0.1        <none>        443/TCP        51d
+[root@master ~]# kubectl run -it --rm test-pod --image=alpine --restart=Never -- sh
+# Inside the pod, run:
+apk add --no-cache curl
+curl -v http://registry:5000/v2/
+
+If you don't see a command prompt, try pressing enter.
+
+/ # exit
+pod "test-pod" deleted
+-bash: apk: command not found
+* Could not resolve host: registry
+* Closing connection 0
+curl: (6) Could not resolve host: registry
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS             RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running            1 (111m ago)   3d15h
+app2-b694f4699-hjqw9                     1/1     Running            1 (111m ago)   3d15h
+importer-src-dv                          0/1     CrashLoopBackOff   6 (38s ago)    7m9s
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running            0              14m
+[root@master ~]# kubectl get vm
+NAME    AGE     STATUS            READY
+vm-dv   7m17s   DataVolumeError   False
+[root@master ~]# kubectl delete vm vm-dv
+virtualmachine.kubevirt.io "vm-dv" deleted
+[root@master ~]# calicoctl
+Usage:
+  calicoctl [options] <command> [<args>...]
+Invalid option: ''. Use flag '--help' to read about a specific subcommand.
+[root@master ~]# calicoctl  get nodes
+NAME
+master.example.com
+worker1.example.com
+worker2.example.com
+worker3.example.com
+
+[root@master ~]# dnf install httpd -y
+Updating Subscription Management repositories.
+Last metadata expiration check: 1:43:34 ago on Friday 20 December 2024 12:41:29 PM.
+Dependencies resolved.
+=======================================================================================================================================================
+ Package                             Architecture            Version                           Repository                                         Size
+=======================================================================================================================================================
+Installing:
+ httpd                               x86_64                  2.4.62-1.el9                      rhel-9-for-x86_64-appstream-rpms                   51 k
+Installing dependencies:
+ apr                                 x86_64                  1.7.0-12.el9_3                    rhel-9-for-x86_64-appstream-rpms                  126 k
+ apr-util                            x86_64                  1.6.1-23.el9                      rhel-9-for-x86_64-appstream-rpms                   97 k
+ apr-util-bdb                        x86_64                  1.6.1-23.el9                      rhel-9-for-x86_64-appstream-rpms                   14 k
+ httpd-core                          x86_64                  2.4.62-1.el9                      rhel-9-for-x86_64-appstream-rpms                  1.5 M
+ httpd-filesystem                    noarch                  2.4.62-1.el9                      rhel-9-for-x86_64-appstream-rpms                   15 k
+ httpd-tools                         x86_64                  2.4.62-1.el9                      rhel-9-for-x86_64-appstream-rpms                   86 k
+ mailcap                             noarch                  2.1.49-5.el9                      rhel-9-for-x86_64-baseos-rpms                      35 k
+ redhat-logos-httpd                  noarch                  90.4-2.el9                        rhel-9-for-x86_64-appstream-rpms                   18 k
+Installing weak dependencies:
+ apr-util-openssl                    x86_64                  1.6.1-23.el9                      rhel-9-for-x86_64-appstream-rpms                   17 k
+ mod_http2                           x86_64                  2.0.26-2.el9_4.1                  rhel-9-for-x86_64-appstream-rpms                  167 k
+ mod_lua                             x86_64                  2.4.62-1.el9                      rhel-9-for-x86_64-appstream-rpms                   60 k
+
+Transaction Summary
+=======================================================================================================================================================
+Install  12 Packages
+
+Total download size: 2.2 M
+Installed size: 6.1 M
+Downloading Packages:
+(1/12): apr-util-bdb-1.6.1-23.el9.x86_64.rpm                                                                            39 kB/s |  14 kB     00:00
+(2/12): apr-util-openssl-1.6.1-23.el9.x86_64.rpm                                                                        45 kB/s |  17 kB     00:00
+(3/12): apr-util-1.6.1-23.el9.x86_64.rpm                                                                               251 kB/s |  97 kB     00:00
+(4/12): redhat-logos-httpd-90.4-2.el9.noarch.rpm                                                                        57 kB/s |  18 kB     00:00
+(5/12): apr-1.7.0-12.el9_3.x86_64.rpm                                                                                  378 kB/s | 126 kB     00:00
+(6/12): httpd-2.4.62-1.el9.x86_64.rpm                                                                                   99 kB/s |  51 kB     00:00
+(7/12): mod_http2-2.0.26-2.el9_4.1.x86_64.rpm                                                                          500 kB/s | 167 kB     00:00
+(8/12): httpd-tools-2.4.62-1.el9.x86_64.rpm                                                                            233 kB/s |  86 kB     00:00
+(9/12): mod_lua-2.4.62-1.el9.x86_64.rpm                                                                                169 kB/s |  60 kB     00:00
+(10/12): httpd-core-2.4.62-1.el9.x86_64.rpm                                                                            3.4 MB/s | 1.5 MB     00:00
+(11/12): mailcap-2.1.49-5.el9.noarch.rpm                                                                               107 kB/s |  35 kB     00:00
+(12/12): httpd-filesystem-2.4.62-1.el9.noarch.rpm                                                                       17 kB/s |  15 kB     00:00
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                  1.1 MB/s | 2.2 MB     00:01
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                               1/1
+  Installing       : apr-1.7.0-12.el9_3.x86_64                                                                                                    1/12
+  Installing       : apr-util-bdb-1.6.1-23.el9.x86_64                                                                                             2/12
+  Installing       : apr-util-openssl-1.6.1-23.el9.x86_64                                                                                         3/12
+  Installing       : apr-util-1.6.1-23.el9.x86_64                                                                                                 4/12
+  Installing       : httpd-tools-2.4.62-1.el9.x86_64                                                                                              5/12
+  Installing       : mailcap-2.1.49-5.el9.noarch                                                                                                  6/12
+  Running scriptlet: httpd-filesystem-2.4.62-1.el9.noarch                                                                                         7/12
+  Installing       : httpd-filesystem-2.4.62-1.el9.noarch                                                                                         7/12
+  Installing       : httpd-core-2.4.62-1.el9.x86_64                                                                                               8/12
+  Installing       : mod_lua-2.4.62-1.el9.x86_64                                                                                                  9/12
+  Installing       : redhat-logos-httpd-90.4-2.el9.noarch                                                                                        10/12
+  Installing       : mod_http2-2.0.26-2.el9_4.1.x86_64                                                                                           11/12
+  Installing       : httpd-2.4.62-1.el9.x86_64                                                                                                   12/12
+  Running scriptlet: httpd-2.4.62-1.el9.x86_64                                                                                                   12/12
+  Verifying        : apr-util-1.6.1-23.el9.x86_64                                                                                                 1/12
+  Verifying        : apr-util-bdb-1.6.1-23.el9.x86_64                                                                                             2/12
+  Verifying        : apr-util-openssl-1.6.1-23.el9.x86_64                                                                                         3/12
+  Verifying        : redhat-logos-httpd-90.4-2.el9.noarch                                                                                         4/12
+  Verifying        : apr-1.7.0-12.el9_3.x86_64                                                                                                    5/12
+  Verifying        : httpd-2.4.62-1.el9.x86_64                                                                                                    6/12
+  Verifying        : httpd-tools-2.4.62-1.el9.x86_64                                                                                              7/12
+  Verifying        : mod_http2-2.0.26-2.el9_4.1.x86_64                                                                                            8/12
+  Verifying        : mod_lua-2.4.62-1.el9.x86_64                                                                                                  9/12
+  Verifying        : httpd-core-2.4.62-1.el9.x86_64                                                                                              10/12
+  Verifying        : httpd-filesystem-2.4.62-1.el9.noarch                                                                                        11/12
+  Verifying        : mailcap-2.1.49-5.el9.noarch                                                                                                 12/12
+Installed products updated.
+
+Installed:
+  apr-1.7.0-12.el9_3.x86_64      apr-util-1.6.1-23.el9.x86_64         apr-util-bdb-1.6.1-23.el9.x86_64        apr-util-openssl-1.6.1-23.el9.x86_64
+  httpd-2.4.62-1.el9.x86_64      httpd-core-2.4.62-1.el9.x86_64       httpd-filesystem-2.4.62-1.el9.noarch    httpd-tools-2.4.62-1.el9.x86_64
+  mailcap-2.1.49-5.el9.noarch    mod_http2-2.0.26-2.el9_4.1.x86_64    mod_lua-2.4.62-1.el9.x86_64             redhat-logos-httpd-90.4-2.el9.noarch
+
+Complete!
+[root@master ~]# systemctl enable httpd
+systemctl start httpd
+systemctl status httpd
+Created symlink /etc/systemd/system/multi-user.target.wants/httpd.service → /usr/lib/systemd/system/httpd.service.
+● httpd.service - The Apache HTTP Server
+     Loaded: loaded (/usr/lib/systemd/system/httpd.service; enabled; preset: disabled)
+     Active: active (running) since Fri 2024-12-20 14:25:16 IST; 19ms ago
+       Docs: man:httpd.service(8)
+   Main PID: 53386 (httpd)
+     Status: "Started, listening on: port 80"
+      Tasks: 177 (limit: 100244)
+     Memory: 48.5M
+        CPU: 67ms
+     CGroup: /system.slice/httpd.service
+             ├─53386 /usr/sbin/httpd -DFOREGROUND
+             ├─53387 /usr/sbin/httpd -DFOREGROUND
+             ├─53388 /usr/sbin/httpd -DFOREGROUND
+             ├─53389 /usr/sbin/httpd -DFOREGROUND
+             └─53391 /usr/sbin/httpd -DFOREGROUND
+
+Dec 20 14:25:16 master.example.com systemd[1]: Starting The Apache HTTP Server...
+Dec 20 14:25:16 master.example.com httpd[53386]: Server configured, listening on: port 80
+Dec 20 14:25:16 master.example.com systemd[1]: Started The Apache HTTP Server.
+[root@master ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+ens160           UP             192.168.29.15/24
+cali3db4182a67b@if2 UP             fe80::ecee:eeff:feee:eeee/64
+cali16362734945@if2 UP             fe80::ecee:eeff:feee:eeee/64
+tunl0@NONE       UNKNOWN        172.16.204.64/32
+cali78acfed1c95@if3 UP             fe80::ecee:eeff:feee:eeee/64
+cali47c9efa4866@if3 UP             fe80::ecee:eeff:feee:eeee/64
+calice8e7eb2a46@if3 UP             fe80::ecee:eeff:feee:eeee/64
+cali8bc97a49598@if3 UP             fe80::ecee:eeff:feee:eeee/64
+[root@master ~]# kubectl get service -n cdi
+NAME                     TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+cdi-api                  ClusterIP   10.98.83.70      <none>        443/TCP    47m
+cdi-prometheus-metrics   ClusterIP   10.97.238.213    <none>        8080/TCP   47m
+cdi-uploadproxy          ClusterIP   10.105.194.216   <none>        443/TCP    47m
+[root@master ~]# ls
+anaconda-ks.cfg  app2.yml          app-ingress.yml  calico.yaml        nfs-subdir-external-provisioner  staging-issuer.yaml
+app1.yml         app-ingress2.yml  application.yml  echo_ingress.yaml  rhel9-mariadb.qcow2              staging.yml
+[root@master ~]# mv rhel9-mariadb.qcow2 /var/www/html/
+[root@master ~]# ls /var/www/html/
+rhel9-mariadb.qcow2
+[root@master ~]# chmod 755 -R /var/www/html/
+[root@master ~]# virtctl image-upload dv fedora-dv --size=30Gi --image-path=/var/www/html/rhel9-mariadb.qcow2 --insecure  --uploadproxy-url=https://10.105.194.216:443
+PVC default/fedora-dv not found
+DataVolume default/fedora-dv created
+Waiting for PVC fedora-dv upload pod to be ready...
+Pod now ready
+Uploading data to https://10.105.194.216:443
+
+956.69 MiB / 956.69 MiB [---------------------------------------------------------------------------------------------------] 100.00% 38.02 MiB p/s 25s
+
+Uploading data completed successfully, waiting for processing to complete, you can hit ctrl-c without interrupting the progress
+Processing completed successfully
+Uploading /var/www/html/rhel9-mariadb.qcow2 completed successfully
+[root@master ~]# vi virtualmachinefeodra.yml
+[root@master ~]# kubectl create -f virtualmachinefeodra.yml
+virtualmachine.kubevirt.io/dev-dbaccess created
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS    READY
+dev-dbaccess   7s    Running   True
+[root@master ~]# kubectl get vmi
+NAME           AGE   PHASE     IP               NODENAME              READY
+dev-dbaccess   10s   Running   172.16.102.145   worker1.example.com   True
+[root@master ~]# kubectl get pvc
+NAME        STATUS   VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+fedora-dv   Bound    pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            nfs-client     <unset>                 3m9s
+[root@master ~]# kubectl get pv
+NAME                                       CAPACITY      ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM               STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            Delete           Bound    default/fedora-dv   nfs-client     <unset>                          3m19s
+[root@master ~]# kubectl get dv
+NAME        PHASE       PROGRESS   RESTARTS   AGE
+fedora-dv   Succeeded   N/A                   3m24s
+[root@master ~]# virtctl console dev-dbaccess
+Successfully connected to dev-dbaccess console. The escape sequence is ^]
+
+dev-dbaccess login: developer
+Password:
+[developer@dev-dbaccess ~]$ sudo -i
+[root@dev-dbaccess ~]# ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+eth0             UP             10.0.2.2/24 fe80::e448:96ff:fecc:1267/64
+[root@dev-dbaccess ~]# df -kh
+Filesystem      Size  Used Avail Use% Mounted on
+devtmpfs        4.0M     0  4.0M   0% /dev
+tmpfs           888M     0  888M   0% /dev/shm
+tmpfs           356M  9.5M  346M   3% /run
+/dev/vda4        30G  2.0G   28G   7% /
+/dev/vda3       536M  164M  373M  31% /boot
+/dev/vda2       200M  7.0M  193M   4% /efi
+tmpfs           178M     0  178M   0% /run/user/1001
+[root@dev-dbaccess ~]# mkdir vikasmathur
+[root@dev-dbaccess ~]# cd vikasmathur/
+[root@dev-dbaccess vikasmathur]# touch abc{1..100}.txt
+[root@dev-dbaccess vikasmathur]# ls -l
+total 0
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc1.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc10.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc100.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc11.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc12.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc13.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc14.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc15.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc16.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc17.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc18.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc19.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc2.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc20.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc21.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc22.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc23.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc24.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc25.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc26.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc27.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc28.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc29.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc3.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc30.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc31.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc32.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc33.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc34.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc35.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc36.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc37.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc38.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc39.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc4.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc40.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc41.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc42.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc43.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc44.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc45.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc46.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc47.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc48.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc49.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc5.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc50.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc51.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc52.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc53.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc54.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc55.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc56.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc57.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc58.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc59.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc6.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc60.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc61.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc62.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc63.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc64.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc65.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc66.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc67.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc68.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc69.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc7.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc70.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc71.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc72.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc73.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc74.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc75.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc76.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc77.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc78.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc79.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc8.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc80.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc81.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc82.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc83.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc84.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc85.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc86.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc87.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc88.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc89.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc9.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc90.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc91.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc92.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc93.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc94.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc95.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc96.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc97.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc98.txt
+-rw-r--r--. 1 root root 0 Dec 20 04:06 abc99.txt
+[root@dev-dbaccess vikasmathur]# ls
+abc1.txt    abc22.txt  abc36.txt  abc5.txt   abc63.txt  abc77.txt  abc90.txt
+abc10.txt   abc23.txt  abc37.txt  abc50.txt  abc64.txt  abc78.txt  abc91.txt
+abc100.txt  abc24.txt  abc38.txt  abc51.txt  abc65.txt  abc79.txt  abc92.txt
+abc11.txt   abc25.txt  abc39.txt  abc52.txt  abc66.txt  abc8.txt   abc93.txt
+abc12.txt   abc26.txt  abc4.txt   abc53.txt  abc67.txt  abc80.txt  abc94.txt
+abc13.txt   abc27.txt  abc40.txt  abc54.txt  abc68.txt  abc81.txt  abc95.txt
+abc14.txt   abc28.txt  abc41.txt  abc55.txt  abc69.txt  abc82.txt  abc96.txt
+abc15.txt   abc29.txt  abc42.txt  abc56.txt  abc7.txt   abc83.txt  abc97.txt
+abc16.txt   abc3.txt   abc43.txt  abc57.txt  abc70.txt  abc84.txt  abc98.txt
+abc17.txt   abc30.txt  abc44.txt  abc58.txt  abc71.txt  abc85.txt  abc99.txt
+abc18.txt   abc31.txt  abc45.txt  abc59.txt  abc72.txt  abc86.txt
+abc19.txt   abc32.txt  abc46.txt  abc6.txt   abc73.txt  abc87.txt
+abc2.txt    abc33.txt  abc47.txt  abc60.txt  abc74.txt  abc88.txt
+abc20.txt   abc34.txt  abc48.txt  abc61.txt  abc75.txt  abc89.txt
+abc21.txt   abc35.txt  abc49.txt  abc62.txt  abc76.txt  abc9.txt
+[root@dev-dbaccess vikasmathur]# cd ~
+[root@dev-dbaccess ~]# du -sh vikasmathur/
+4.0K    vikasmathur/
+[root@dev-dbaccess ~]# systemctl status mariadb
+● mariadb.service - MariaDB 10.5 database server
+     Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; preset: >
+     Active: active (running) since Fri 2024-12-20 04:04:00 EST; 2min 57s ago
+       Docs: man:mariadbd(8)
+             https://mariadb.com/kb/en/library/systemd/
+    Process: 758 ExecStartPre=/usr/libexec/mariadb-check-socket (code=exited, s>
+    Process: 807 ExecStartPre=/usr/libexec/mariadb-prepare-db-dir mariadb.servi>
+    Process: 1197 ExecStartPost=/usr/libexec/mariadb-check-upgrade (code=exited>
+   Main PID: 870 (mariadbd)
+     Status: "Taking your SQL requests now..."
+      Tasks: 9 (limit: 10866)
+     Memory: 138.2M
+        CPU: 741ms
+     CGroup: /system.slice/mariadb.service
+             └─870 /usr/libexec/mariadbd --basedir=/usr
+
+Dec 20 04:03:58 dev-dbaccess systemd[1]: Starting MariaDB 10.5 database server.>
+Dec 20 04:03:58 dev-dbaccess mariadb-prepare-db-dir[807]: Database MariaDB is p>
+Dec 20 04:03:58 dev-dbaccess mariadb-prepare-db-dir[807]: If this is not the ca>
+Dec 20 04:04:00 dev-dbaccess systemd[1]: Started MariaDB 10.5 database server.
+lines 1-20/20 (END)
+
+[root@dev-dbaccess ~]#
+[root@dev-dbaccess ~]# mysql
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)
+[root@dev-dbaccess ~]# mysql root
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)
+[root@dev-dbaccess ~]# mysql -u root -p root
+Enter password:
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+[root@dev-dbaccess ~]# mysql -u root
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)
+[root@dev-dbaccess ~]# mysql -u root -p
+Enter password:
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+[root@dev-dbaccess ~]# systemctl stop mariadb
+[root@dev-dbaccess ~]# mariadbd-safe --skip-grant-tables --skip-networking &
+[1] 1862
+[root@dev-dbaccess ~]# 241220 04:09:02 mysqld_safe Logging to '/var/log/mariadb/mariadb.log'.
+241220 04:09:02 mysqld_safe Starting mariadbd daemon with databases from /var/lib/mysql
+
+You were disconnected from the console. This has one of the following reasons:
+ - another user connected to the console of the target vm
+ - network issues
+websocket: close 1006 (abnormal closure): unexpected EOF
+[root@master ~]# virtctl console dev-dbaccess
+Successfully connected to dev-dbaccess console. The escape sequence is ^]
+
+[root@dev-dbaccess ~]# sytemctl status mariadb
+-bash: sytemctl: command not found
+[root@dev-dbaccess ~]# sytemctl status mariadb*
+-bash: sytemctl: command not found
+[root@dev-dbaccess ~]# systemctl status mariadb*
+[root@dev-dbaccess ~]# systemctl start  mariadb*
+Warning: systemctl start called with a glob pattern.
+Hint: unit globs expand to loaded units, so start will usually have no effect.
+      Passing --all will also load units which are pulled in by other units.
+      See systemctl(1) for more details.
+[root@dev-dbaccess ~]# systemctl status mariadb
+○ mariadb.service - MariaDB 10.5 database server
+     Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; preset: >
+     Active: inactive (dead) since Fri 2024-12-20 04:08:57 EST; 1min 45s ago
+   Duration: 4min 56.138s
+       Docs: man:mariadbd(8)
+             https://mariadb.com/kb/en/library/systemd/
+    Process: 758 ExecStartPre=/usr/libexec/mariadb-check-socket (code=exited, s>
+    Process: 807 ExecStartPre=/usr/libexec/mariadb-prepare-db-dir mariadb.servi>
+    Process: 870 ExecStart=/usr/libexec/mariadbd --basedir=/usr $MYSQLD_OPTS $_>
+    Process: 1197 ExecStartPost=/usr/libexec/mariadb-check-upgrade (code=exited>
+   Main PID: 870 (code=exited, status=0/SUCCESS)
+     Status: "MariaDB server is down"
+        CPU: 791ms
+
+Dec 20 04:03:58 dev-dbaccess systemd[1]: Starting MariaDB 10.5 database server.>
+Dec 20 04:03:58 dev-dbaccess mariadb-prepare-db-dir[807]: Database MariaDB is p>
+Dec 20 04:03:58 dev-dbaccess mariadb-prepare-db-dir[807]: If this is not the ca>
+Dec 20 04:04:00 dev-dbaccess systemd[1]: Started MariaDB 10.5 database server.
+Dec 20 04:08:57 dev-dbaccess systemd[1]: Stopping MariaDB 10.5 database server.>
+Dec 20 04:08:57 dev-dbaccess systemd[1]: mariadb.service: Deactivated successfu>
+Dec 20 04:08:57 dev-dbaccess systemd[1]: Stopped MariaDB 10.5 database server.
+lines 1-21/21 (END)
+c
+[root@dev-dbaccess ~]#
+[root@dev-dbaccess ~]# systemctl start  mariadb
+Job for mariadb.service failed because the control process exited with error code.
+See "systemctl status mariadb.service" and "journalctl -xeu mariadb.service" for details.
+[root@dev-dbaccess ~]# journalctl -xeu mariadb.ser
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+-- No entries --
+[root@dev-dbaccess ~]# journalctl -xeu mariadb.service
+Dec 20 04:10:54 dev-dbaccess mariadb-check-socket[1996]: Please, stop the proce>
+Dec 20 04:10:54 dev-dbaccess systemd[1]: mariadb.service: Control process exite>
+░░ Subject: Unit process exited
+░░ Defined-By: systemd
+░░ Support: https://access.redhat.com/support
+░░
+░░ An ExecStartPre= process belonging to unit mariadb.service has exited.
+░░
+░░ The process' exit code is 'exited' and its exit status is 1.
+Dec 20 04:10:54 dev-dbaccess systemd[1]: mariadb.service: Failed with result 'e>
+░░ Subject: Unit failed
+░░ Defined-By: systemd
+░░ Support: https://access.redhat.com/support
+░░
+░░ The unit mariadb.service has entered the 'failed' state with result 'exit-co>
+Dec 20 04:10:54 dev-dbaccess systemd[1]: Failed to start MariaDB 10.5 database >
+░░ Subject: A start job for unit mariadb.service has failed
+░░ Defined-By: systemd
+░░ Support: https://access.redhat.com/support
+░░
+░░ A start job for unit mariadb.service has finished with a failure.
+░░
+░░ The job identifier is 1048 and the job result is failed.
+lines 51-73/73 (END)
+
+[root@dev-dbaccess ~]# yum remove mariadb mariadb-server
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+Dependencies resolved.
+================================================================================
+ Package              Architecture Version                  Repository     Size
+================================================================================
+Removing:
+ mariadb              x86_64       3:10.5.22-1.el9_2        @System        18 M
+ mariadb-server       x86_64       3:10.5.22-1.el9_2        @System        63 M
+
+Transaction Summary
+================================================================================
+Remove  2 Packages
+
+Freed space: 81 M
+Is this ok [y/N]: y
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1
+  Erasing          : mariadb-3:10.5.22-1.el9_2.x86_64                       1/2
+  Running scriptlet: mariadb-server-3:10.5.22-1.el9_2.x86_64                2/2
+Removed "/etc/systemd/system/multi-user.target.wants/mariadb.service".
+Removed "/etc/systemd/system/mysql.service".
+Removed "/etc/systemd/system/mysqld.service".
+
+  Erasing          : mariadb-server-3:10.5.22-1.el9_2.x86_64                2/2
+warning: /etc/my.cnf.d/mariadb-server.cnf saved as /etc/my.cnf.d/mariadb-server.cnf.rpmsave
+
+  Running scriptlet: mariadb-server-3:10.5.22-1.el9_2.x86_64                2/2
+  Verifying        : mariadb-3:10.5.22-1.el9_2.x86_64                       1/2
+  Verifying        : mariadb-server-3:10.5.22-1.el9_2.x86_64                2/2
+Installed products updated.
+
+Removed:
+  mariadb-3:10.5.22-1.el9_2.x86_64    mariadb-server-3:10.5.22-1.el9_2.x86_64
+
+Complete!
+[root@dev-dbaccess ~]# yum install  mariadb mariadb-server
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+Error: There are no enabled repositories in "/etc/yum.repos.d", "/etc/yum/repos.d", "/etc/distro.repos.d".
+[root@dev-dbaccess ~]# yum install  mariadb mariadb-server
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+Error: There are no enabled repositories in "/etc/yum.repos.d", "/etc/yum/repos.d", "/etc/distro.repos.d".
+[root@dev-dbaccess ~]# yum install  mariadb mariadb-server
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+Error: There are no enabled repositories in "/etc/yum.repos.d", "/etc/yum/repos.d", "/etc/distro.repos.d".
+[root@dev-dbaccess ~]# yum install  mariadb mariadb-server
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+Error: There are no enabled repositories in "/etc/yum.repos.d", "/etc/yum/repos.d", "/etc/distro.repos.d".
+[root@dev-dbaccess ~]# yum install  mariadb mariadb-server
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+Error: There are no enabled repositories in "/etc/yum.repos.d", "/etc/yum/repos.d", "/etc/distro.repos.d".
+[root@dev-dbaccess ~]# exit
+logout
+[developer@dev-dbaccess ~]$ kubectl get vm
+-bash: kubectl: command not found
+[developer@dev-dbaccess ~]$ exit
+logout
+
+Red Hat Enterprise Linux 9.3 (Plow)
+Kernel 5.14.0-362.24.1.el9_3.x86_64 on an x86_64
+
+Activate the web console with: systemctl enable --now cockpit.socket
+
+dev-dbaccess login: [root@master ~]#
+[root@master ~]# kubectl get vmi
+NAME           AGE     PHASE     IP               NODENAME              READY
+dev-dbaccess   9m29s   Running   172.16.102.145   worker1.example.com   True
+[root@master ~]# kubectl get vm
+NAME           AGE     STATUS    READY
+dev-dbaccess   9m30s   Running   True
+[root@master ~]# ctr images
+NAME:
+   ctr images - Manage images
+
+USAGE:
+   ctr images command [command options] [arguments...]
+
+COMMANDS:
+   check                    Check existing images to ensure all content is available locally
+   export                   Export images
+   import                   Import images
+   list, ls                 List images known to containerd
+   mount                    Mount an image to a target path
+   unmount                  Unmount the image from the target
+   pull                     Pull an image from a remote
+   push                     Push an image to a remote
+   prune                    Remove unused images
+   delete, del, remove, rm  Remove one or more images by reference
+   tag                      Tag an image
+   label                    Set and clear labels for an image
+   convert                  Convert an image
+   usage                    Display usage of snapshots for a given image ref
+
+OPTIONS:
+   --help, -h  show help
+
+[root@master ~]# ctr images ls
+REF TYPE DIGEST SIZE PLATFORMS LABELS
+[root@master ~]# ctr pull yum remove mariadb mariadb-server
+^C
+[root@master ~]# ctr pull docker://registry:5000/kubevirt/alpine-container-disk-demo:devel
+No help topic for 'pull'
+[root@master ~]# ctr pull http://<registry_host>:5000/kubevirt/alpine-container-disk-demo:devel
+-bash: registry_host: No such file or directory
+[root@master ~]# ctr pull  docker://registry:5000/kubevirt/alpine-container-disk-demo:devel
+No help topic for 'pull'
+[root@master ~]# ctr --version
+ctr containerd.io 1.7.22
+[root@master ~]# ctr image pull registry:5000/kubevirt/alpine-container-disk-demo:devel
+registry:5000/kubevirt/alpine-container-disk-demo:devel: resolving      |--------------------------------------|
+elapsed: 0.4 s                                           total:   0.0 B (0.0 B/s)
+INFO[0000] trying next host                              error="failed to do request: Head \"https://registry:5000/v2/kubevirt/alpine-container-disk-demo/manifests/devel\": dial tcp: lookup registry on 8.8.8.8:53: no such host" host="registry:5000"
+ctr: failed to resolve reference "registry:5000/kubevirt/alpine-container-disk-demo:devel": failed to do request: Head "https://registry:5000/v2/kubevirt/alpine-container-disk-demo/manifests/devel": dial tcp: lookup registry on 8.8.8.8:53: no such host
+[root@master ~]# ctr image pull docker://registry:5000/kubevirt/alpine-container-disk-demo:devel
+ctr: failed to resolve reference "docker://registry:5000/kubevirt/alpine-container-disk-demo:devel": invalid reference
+[root@master ~]# nslookup registry
+-bash: nslookup: command not found
+[root@master ~]# yum install net-tools -y
+Updating Subscription Management repositories.
+Last metadata expiration check: 2:07:57 ago on Friday 20 December 2024 12:41:29 PM.
+Package net-tools-2.0-0.62.20160912git.el9.x86_64 is already installed.
+Dependencies resolved.
+=======================================================================================================================================================
+ Package                     Architecture             Version                                    Repository                                       Size
+=======================================================================================================================================================
+Upgrading:
+ net-tools                   x86_64                   2.0-0.64.20160912git.el9                   rhel-9-for-x86_64-baseos-rpms                   312 k
+
+Transaction Summary
+=======================================================================================================================================================
+Upgrade  1 Package
+
+Total download size: 312 k
+Downloading Packages:
+net-tools-2.0-0.64.20160912git.el9.x86_64.rpm                                                                          885 kB/s | 312 kB     00:00
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                  883 kB/s | 312 kB     00:00
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                               1/1
+  Upgrading        : net-tools-2.0-0.64.20160912git.el9.x86_64                                                                                     1/2
+  Running scriptlet: net-tools-2.0-0.64.20160912git.el9.x86_64                                                                                     1/2
+  Cleanup          : net-tools-2.0-0.62.20160912git.el9.x86_64                                                                                     2/2
+  Running scriptlet: net-tools-2.0-0.62.20160912git.el9.x86_64                                                                                     2/2
+  Verifying        : net-tools-2.0-0.64.20160912git.el9.x86_64                                                                                     1/2
+  Verifying        : net-tools-2.0-0.62.20160912git.el9.x86_64                                                                                     2/2
+Installed products updated.
+
+Upgraded:
+  net-tools-2.0-0.64.20160912git.el9.x86_64
+
+Complete!
+[root@master ~]# nslookup registry
+-bash: nslookup: command not found
+[root@master ~]# yum install nslookup*
+Updating Subscription Management repositories.
+Last metadata expiration check: 2:08:13 ago on Friday 20 December 2024 12:41:29 PM.
+No match for argument: nslookup*
+Error: Unable to find a match: nslookup*
+[root@master ~]# yum install bind-utils
+Updating Subscription Management repositories.
+Last metadata expiration check: 2:08:35 ago on Friday 20 December 2024 12:41:29 PM.
+Dependencies resolved.
+=======================================================================================================================================================
+ Package                       Architecture            Version                                 Repository                                         Size
+=======================================================================================================================================================
+Installing:
+ bind-utils                    x86_64                  32:9.16.23-24.el9_5                     rhel-9-for-x86_64-appstream-rpms                  213 k
+Installing dependencies:
+ bind-libs                     x86_64                  32:9.16.23-24.el9_5                     rhel-9-for-x86_64-appstream-rpms                  1.2 M
+ bind-license                  noarch                  32:9.16.23-24.el9_5                     rhel-9-for-x86_64-appstream-rpms                   14 k
+ fstrm                         x86_64                  0.6.1-3.el9                             rhel-9-for-x86_64-appstream-rpms                   30 k
+ libmaxminddb                  x86_64                  1.5.2-4.el9                             rhel-9-for-x86_64-appstream-rpms                   35 k
+ libuv                         x86_64                  1:1.42.0-2.el9_4                        rhel-9-for-x86_64-appstream-rpms                  151 k
+ protobuf-c                    x86_64                  1.3.3-13.el9                            rhel-9-for-x86_64-baseos-rpms                      37 k
+
+Transaction Summary
+=======================================================================================================================================================
+Install  7 Packages
+
+Total download size: 1.7 M
+Installed size: 4.7 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/7): bind-license-9.16.23-24.el9_5.noarch.rpm                                                                         44 kB/s |  14 kB     00:00
+(2/7): libuv-1.42.0-2.el9_4.x86_64.rpm                                                                                 456 kB/s | 151 kB     00:00
+(3/7): bind-utils-9.16.23-24.el9_5.x86_64.rpm                                                                          742 kB/s | 213 kB     00:00
+(4/7): bind-libs-9.16.23-24.el9_5.x86_64.rpm                                                                           3.1 MB/s | 1.2 MB     00:00
+(5/7): fstrm-0.6.1-3.el9.x86_64.rpm                                                                                     38 kB/s |  30 kB     00:00
+(6/7): libmaxminddb-1.5.2-4.el9.x86_64.rpm                                                                             128 kB/s |  35 kB     00:00
+(7/7): protobuf-c-1.3.3-13.el9.x86_64.rpm                                                                              132 kB/s |  37 kB     00:00
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                  1.7 MB/s | 1.7 MB     00:01
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                               1/1
+  Installing       : protobuf-c-1.3.3-13.el9.x86_64                                                                                                1/7
+  Installing       : libmaxminddb-1.5.2-4.el9.x86_64                                                                                               2/7
+  Installing       : bind-license-32:9.16.23-24.el9_5.noarch                                                                                       3/7
+  Installing       : libuv-1:1.42.0-2.el9_4.x86_64                                                                                                 4/7
+  Installing       : fstrm-0.6.1-3.el9.x86_64                                                                                                      5/7
+  Installing       : bind-libs-32:9.16.23-24.el9_5.x86_64                                                                                          6/7
+  Installing       : bind-utils-32:9.16.23-24.el9_5.x86_64                                                                                         7/7
+  Running scriptlet: bind-utils-32:9.16.23-24.el9_5.x86_64                                                                                         7/7
+  Verifying        : fstrm-0.6.1-3.el9.x86_64                                                                                                      1/7
+  Verifying        : libuv-1:1.42.0-2.el9_4.x86_64                                                                                                 2/7
+  Verifying        : bind-license-32:9.16.23-24.el9_5.noarch                                                                                       3/7
+  Verifying        : bind-libs-32:9.16.23-24.el9_5.x86_64                                                                                          4/7
+  Verifying        : bind-utils-32:9.16.23-24.el9_5.x86_64                                                                                         5/7
+  Verifying        : libmaxminddb-1.5.2-4.el9.x86_64                                                                                               6/7
+  Verifying        : protobuf-c-1.3.3-13.el9.x86_64                                                                                                7/7
+Installed products updated.
+
+Installed:
+  bind-libs-32:9.16.23-24.el9_5.x86_64   bind-license-32:9.16.23-24.el9_5.noarch   bind-utils-32:9.16.23-24.el9_5.x86_64   fstrm-0.6.1-3.el9.x86_64
+  libmaxminddb-1.5.2-4.el9.x86_64        libuv-1:1.42.0-2.el9_4.x86_64             protobuf-c-1.3.3-13.el9.x86_64
+
+Complete!
+[root@master ~]# nslookup registry
+Server:         8.8.8.8
+Address:        8.8.8.8#53
+
+** server can't find registry: NXDOMAIN
+
+[root@master ~]# ping registry
+ping: registry: Name or service not known
+[root@master ~]# echo "127.0.0.1 registry" | sudo tee -a /etc/hosts
+127.0.0.1 registry
+[root@master ~]# ctr image pull registry:5000/kubevirt/alpine-container-disk-demo:devel
+INFO[0000] trying next host                              error="failed to do request: Head \"https://registry:5000/v2/kubevirt/alpine-container-disk-demo/manifests/devel\": dial tcp 127.0.0.1:5000: connect: connection refused" host="registry:5000"
+ctr: failed to resolve reference "registry:5000/kubevirt/alpine-container-disk-demo:devel": failed to do request: Head "https://registry:5000/v2/kubevirt/alpine-container-disk-demo/manifests/devel": dial tcp 127.0.0.1:5000: connect: connection refused
+[root@master ~]# kubectl edit kubevirt kubevirt -n kubevirt
+Edit cancelled, no changes made.
+[root@master ~]# cat << END > enable-feature-gate.yaml
+---
+apiVersion: kubevirt.io/v1
+kind: KubeVirt
+metadata:
+  name: kubevirt
+  namespace: kubevirt
+spec:
+  configuration:
+    developerConfiguration:
+      featureGates:
+        - LiveMigration
+END
+[root@master ~]# ls -l
+total 296
+-rw-------.  1 root root   1006 Oct 29 12:17 anaconda-ks.cfg
+-rw-r--r--   1 root root    475 Dec 16 23:18 app1.yml
+-rw-r--r--   1 root root    475 Dec 16 23:18 app2.yml
+-rw-r--r--   1 root root    696 Dec 17 00:55 app-ingress2.yml
+-rw-r--r--   1 root root    593 Dec 16 23:24 app-ingress.yml
+-rw-r--r--   1 root root   1065 Dec 20 14:13 application.yml
+-rw-r--r--   1 root root 253923 Oct 29 17:02 calico.yaml
+-rw-r--r--   1 root root    545 Dec 16 00:54 echo_ingress.yaml
+-rw-r--r--   1 root root    191 Dec 20 14:56 enable-feature-gate.yaml
+drwxr-xr-x  10 root root   4096 Dec 20 14:02 nfs-subdir-external-provisioner
+-rw-r--r--   1 root root    515 Dec 17 00:35 staging-issuer.yaml
+-rw-r--r--   1 root root    363 Dec 17 00:38 staging.yml
+-rw-r--r--   1 root root   1174 Dec 20 14:33 virtualmachinefeodra.yml
+[root@master ~]# kubectl apply -f enable-feature-gate.yaml
+Warning: feature gate LiveMigration is deprecated (feature state is "General Availability"), therefore it can be safely removed and is redundant. For more info, please look at: https://github.com/kubevirt/kubevirt/blob/main/docs/deprecation.md
+kubevirt.kubevirt.io/kubevirt configured
+[root@master ~]# kubectl edit kubevirt kubevirt -n kubevirt
+Edit cancelled, no changes made.
+[root@master ~]# kubectl get pvc
+NAME        STATUS   VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+fedora-dv   Bound    pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            nfs-client     <unset>                 27m
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS    READY
+dev-dbaccess   25m   Running   True
+[root@master ~]# vi vmi-fedora
+[root@master ~]# vi vmi-fedora
+[root@master ~]#  virtctl migrate vmi-fedora
+Error migrating VirtualMachine virtualmachine.kubevirt.io "vmi-fedora" not found
+[root@master ~]#  virtctl migrate dev-dbaccess
+VM dev-dbaccess was scheduled to migrate
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS      READY
+dev-dbaccess   26m   Migrating   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS      READY
+dev-dbaccess   26m   Migrating   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS    READY
+dev-dbaccess   26m   Running   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS    READY
+dev-dbaccess   26m   Running   True
+[root@master ~]# kubectl get vmi -o wide
+NAME           AGE   PHASE     IP              NODENAME              READY   LIVE-MIGRATABLE   PAUSED
+dev-dbaccess   26m   Running   172.16.71.214   worker2.example.com   True    True
+[root@master ~]#  virtctl migrate dev-dbaccess
+VM dev-dbaccess was scheduled to migrate
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS      READY
+dev-dbaccess   27m   Migrating   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS      READY
+dev-dbaccess   27m   Migrating   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS    READY
+dev-dbaccess   27m   Running   True
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS    READY
+dev-dbaccess   27m   Running   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS    READY
+dev-dbaccess   27m   Running   True
+[root@master ~]# kubectl get vmi -o wide
+NAME           AGE   PHASE     IP               NODENAME              READY   LIVE-MIGRATABLE   PAUSED
+dev-dbaccess   27m   Running   172.16.102.147   worker1.example.com   True    True
+[root@master ~]# kubectl get virtualmachineinstancemigrations -l kubevirt.io/volume-update-in-progress: vmi` --watch=true
+> ^C
+[root@master ~]# kubectl get virtualmachineinstancemigrations -l kubevirt.io/volume-update-in-progress: vmi` --watch=true^C
+[root@master ~]# ^C
+[root@master ~]# kubectl get virtualmachineinstancemigrations -l kubevirt.io/volume-update-in-progress: vmi` --watch=true
+> kubectl get virtualmachineinstancemigrations -l kubevirt.io/volume-update-in-progress: vmi` --watch=true`
+> ^C
+[root@master ~]# ^C
+[root@master ~]# ^C
+[root@master ~]# kubectl get virtualmachineinstancemigrations -l kubevirt.io/volume-update-in-progress=vmi --watch=true
+
+^C[root@master ~]# ^C
+[root@master ~]# vi new-migration.yml
+[root@master ~]# kubectl create -f new-migration.yml
+Warning: kubevirt.io/v1alpha3 is now deprecated and will be removed in a future release.
+Warning: spec.running is deprecated, please use spec.runStrategy instead.
+virtualmachine.kubevirt.io/cirros-rwx-blk created
+[root@master ~]# kubectl get pods
+NAME                                     READY   STATUS      RESTARTS       AGE
+app1-5c5788cbbf-z49bz                    1/1     Running     1 (3h3m ago)   3d16h
+app2-b694f4699-hjqw9                     1/1     Running     1 (3h3m ago)   3d16h
+nfs-client-provisioner-c6fbdf5f8-ktrrx   1/1     Running     0              86m
+virt-launcher-dev-dbaccess-4tplq         0/2     Completed   0              59m
+virt-launcher-dev-dbaccess-6zq2x         0/2     Completed   0              33m
+virt-launcher-dev-dbaccess-wjrx7         2/2     Running     0              32m
+[root@master ~]# kubectl get pods -A
+NAMESPACE        NAME                                         READY   STATUS      RESTARTS       AGE
+cdi              cdi-apiserver-74dcb7f4c5-6kb9p               1/1     Running     0              112m
+cdi              cdi-deployment-546cdb5fcd-9b4wg              1/1     Running     0              112m
+cdi              cdi-operator-59c7548cfb-mbngd                1/1     Running     0              112m
+cdi              cdi-uploadproxy-66448dc879-rntxb             1/1     Running     0              112m
+cert-manager     cert-manager-74b56b6655-zbghw                1/1     Running     1 (3h3m ago)   3d15h
+cert-manager     cert-manager-cainjector-55d94dc4cc-ffsk5     1/1     Running     2 (3h1m ago)   3d15h
+cert-manager     cert-manager-webhook-564f647c66-fbt4j        1/1     Running     1 (3h3m ago)   3d15h
+default          app1-5c5788cbbf-z49bz                        1/1     Running     1 (3h3m ago)   3d16h
+default          app2-b694f4699-hjqw9                         1/1     Running     1 (3h3m ago)   3d16h
+default          nfs-client-provisioner-c6fbdf5f8-ktrrx       1/1     Running     0              86m
+default          virt-launcher-dev-dbaccess-4tplq             0/2     Completed   0              59m
+default          virt-launcher-dev-dbaccess-6zq2x             0/2     Completed   0              33m
+default          virt-launcher-dev-dbaccess-wjrx7             2/2     Running     0              32m
+ingress-nginx    ingress-nginx-admission-create-cqb8h         0/1     Completed   0              4d19h
+ingress-nginx    ingress-nginx-admission-patch-sjp9k          0/1     Completed   0              4d19h
+ingress-nginx    ingress-nginx-controller-7d56585cd5-sxc2n    1/1     Running     3 (3h3m ago)   4d19h
+kube-system      calico-kube-controllers-b8d8894fb-85mk5      1/1     Running     3 (3h3m ago)   51d
+kube-system      calico-node-6snr2                            1/1     Running     3 (3h3m ago)   51d
+kube-system      calico-node-7qhxz                            1/1     Running     3 (3h3m ago)   51d
+kube-system      calico-node-lxhds                            1/1     Running     3 (3h3m ago)   51d
+kube-system      calico-node-tn2wp                            1/1     Running     3 (3h3m ago)   51d
+kube-system      coredns-7c65d6cfc9-hccp7                     1/1     Running     3 (3h3m ago)   51d
+kube-system      coredns-7c65d6cfc9-kbfzc                     1/1     Running     3 (3h3m ago)   51d
+kube-system      etcd-master.example.com                      1/1     Running     4 (3h3m ago)   51d
+kube-system      kube-apiserver-master.example.com            1/1     Running     4 (3h3m ago)   51d
+kube-system      kube-controller-manager-master.example.com   1/1     Running     8 (137m ago)   51d
+kube-system      kube-proxy-b6npw                             1/1     Running     3 (3h3m ago)   51d
+kube-system      kube-proxy-fcmdt                             1/1     Running     3 (3h3m ago)   51d
+kube-system      kube-proxy-pgrjl                             1/1     Running     3 (3h3m ago)   51d
+kube-system      kube-proxy-tb4zn                             1/1     Running     3 (3h3m ago)   51d
+kube-system      kube-scheduler-master.example.com            1/1     Running     4 (3h3m ago)   51d
+kubevirt         virt-api-785df44d67-4j4dm                    1/1     Running     0              35m
+kubevirt         virt-api-785df44d67-5kvsj                    1/1     Running     0              35m
+kubevirt         virt-controller-fbff48859-8sczb              1/1     Running     0              34m
+kubevirt         virt-controller-fbff48859-9z2qj              1/1     Running     0              34m
+kubevirt         virt-handler-6k98m                           1/1     Running     0              34m
+kubevirt         virt-handler-rrdsh                           1/1     Running     0              34m
+kubevirt         virt-handler-twt9c                           1/1     Running     0              34m
+kubevirt         virt-operator-79456d8689-g8k9w               1/1     Running     0              114m
+kubevirt         virt-operator-79456d8689-p6czg               1/1     Running     0              114m
+metallb-system   controller-8694df9d9b-pdvjw                  1/1     Running     4 (3h1m ago)   4d15h
+metallb-system   speaker-8jzvh                                1/1     Running     3 (3h2m ago)   4d15h
+metallb-system   speaker-c4gfx                                1/1     Running     4 (3h2m ago)   4d15h
+metallb-system   speaker-gbbds                                1/1     Running     3 (3h3m ago)   4d15h
+metallb-system   speaker-xqlb8                                1/1     Running     4 (3h3m ago)   4d15h
+[root@master ~]# kubectl get pvc
+NAME             STATUS    VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+cirros-rwx-blk   Pending                                                                           nfs-client     <unset>                 22s
+fedora-dv        Bound     pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            nfs-client     <unset>                 62m
+[root@master ~]# kubectl get pvc
+NAME             STATUS    VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+cirros-rwx-blk   Pending                                                                           nfs-client     <unset>                 25s
+fedora-dv        Bound     pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            nfs-client     <unset>                 62m
+[root@master ~]# kubectl get pvc
+NAME             STATUS    VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+cirros-rwx-blk   Pending                                                                           nfs-client     <unset>                 26s
+fedora-dv        Bound     pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            nfs-client     <unset>                 62m
+[root@master ~]# kubectl get pvc
+NAME             STATUS    VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+cirros-rwx-blk   Pending                                                                           nfs-client     <unset>                 27s
+fedora-dv        Bound     pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            nfs-client     <unset>                 62m
+[root@master ~]# kubectl get pvc
+NAME             STATUS    VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+cirros-rwx-blk   Pending                                                                           nfs-client     <unset>                 27s
+fedora-dv        Bound     pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            nfs-client     <unset>                 62m
+[root@master ~]# kubectl get pvc
+NAME             STATUS    VOLUME                                     CAPACITY      ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+cirros-rwx-blk   Pending                                                                           nfs-client     <unset>                 28s
+fedora-dv        Bound     pvc-011c79fd-05fb-460e-a165-b1ee06f14240   34087042032   RWX            nfs-client     <unset>                 62m
+[root@master ~]# kubectl describe pvc cirros-rwx-blk
+Name:          cirros-rwx-blk
+Namespace:     default
+StorageClass:  nfs-client
+Status:        Pending
+Volume:
+Labels:        app=containerized-data-importer
+               app.kubernetes.io/component=storage
+               app.kubernetes.io/managed-by=cdi-controller
+               kubevirt.io/created-by=39a71027-957d-45df-8859-bc1a42d356e3
+Annotations:   cdi.kubevirt.io/allowClaimAdoption: true
+               cdi.kubevirt.io/createdForDataVolume: 6179c83a-ae19-4e40-82f5-0fab74e8af50
+               cdi.kubevirt.io/storage.contentType: kubevirt
+               cdi.kubevirt.io/storage.import.certConfigMap: importer-ca-none
+               cdi.kubevirt.io/storage.import.endpoint: http://minio.harvester-system:9000/vm-images/image-jxpnq
+               cdi.kubevirt.io/storage.import.requiresScratch: true
+               cdi.kubevirt.io/storage.import.source: http
+               cdi.kubevirt.io/storage.pod.restarts: 0
+               cdi.kubevirt.io/storage.preallocation.requested: false
+               cdi.kubevirt.io/storage.usePopulator: false
+               volume.beta.kubernetes.io/storage-provisioner: k8s-sigs.io/nfs-subdir-external-provisioner
+               volume.kubernetes.io/storage-provisioner: k8s-sigs.io/nfs-subdir-external-provisioner
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:
+Access Modes:
+VolumeMode:    Block
+Used By:       <none>
+Events:
+  Type     Reason                Age               From                                                                                                                     Message
+  ----     ------                ----              ----                                                                                                                     -------
+  Warning  ProvisioningFailed    37s               k8s-sigs.io/nfs-subdir-external-provisioner_nfs-client-provisioner-c6fbdf5f8-ktrrx_07dd1454-1a6e-46e0-b7a4-df4a82c1a22d  k8s-sigs.io/nfs-subdir-external-provisioner does not support block volume provisioning
+  Normal   ExternalProvisioning  2s (x5 over 37s)  persistentvolume-controller                                                                                              Waiting for a volume to be created either by the external provisioner 'k8s-sigs.io/nfs-subdir-external-provisioner' or manually by the system administrator. If volume creation is delayed, please verify that the provisioner is running and correctly registered.
+[root@master ~]# [root@master ~]# cat << END > enable-feature-gate.yaml
+---
+apiVersion: kubevirt.io/v1
+kind: KubeVirt
+metadata:
+  name: kubevirt
+  namespace: kubevirt
+spec:
+  configuration:
+    developerConfiguration:
+      featureGates:
+        - LiveMigration
+END
+[root@master ~]# ls -l
+total 296
