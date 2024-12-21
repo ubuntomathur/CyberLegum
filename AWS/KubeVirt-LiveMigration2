@@ -1,0 +1,169 @@
+[root@master none]# kubectl get nodes
+NAME                  STATUS   ROLES           AGE   VERSION
+master.example.com    Ready    control-plane   52d   v1.31.2
+worker1.example.com   Ready    <none>          52d   v1.31.2
+worker2.example.com   Ready    <none>          52d   v1.31.2
+worker3.example.com   Ready    <none>          52d   v1.31.2
+[root@master none]#
+
+[root@master ~]# kubectl get pods -n cdi
+NAME                               READY   STATUS    RESTARTS      AGE
+cdi-apiserver-74dcb7f4c5-6kb9p     1/1     Running   3 (21m ago)   26h
+cdi-deployment-546cdb5fcd-9b4wg    1/1     Running   3 (21m ago)   26h
+cdi-operator-59c7548cfb-mbngd      1/1     Running   2 (21m ago)   26h
+cdi-uploadproxy-66448dc879-rntxb   1/1     Running   1 (25m ago)   26h
+[root@master ~]# kubectl get pods -n kubevirt
+NAME                              READY   STATUS    RESTARTS      AGE
+virt-api-785df44d67-4j4dm         1/1     Running   1 (24m ago)   25h
+virt-api-785df44d67-5kvsj         1/1     Running   1 (24m ago)   25h
+virt-controller-fbff48859-8sczb   1/1     Running   1 (24m ago)   25h
+virt-controller-fbff48859-9z2qj   1/1     Running   1 (24m ago)   25h
+virt-handler-6k98m                1/1     Running   1 (24m ago)   25h
+virt-handler-rrdsh                1/1     Running   1 (25m ago)   25h
+virt-handler-twt9c                1/1     Running   1 (25m ago)   25h
+virt-operator-79456d8689-g8k9w    1/1     Running   2 (21m ago)   26h
+virt-operator-79456d8689-p6czg    1/1     Running   1 (24m ago)   26h
+[root@master ~]#
+[root@master none]# cat << END > enable-feature-gate.yaml
+---
+apiVersion: kubevirt.io/v1
+kind: KubeVirt
+metadata:
+  name: kubevirt
+  namespace: kubevirt
+spec:
+  configuration:
+    developerConfiguration:
+      featureGates:
+        - LiveMigration
+END
+[root@master none]# kubectl apply -f enable-feature-gate.yaml
+Warning: feature gate LiveMigration is deprecated (feature state is "General Availability"), therefore it can be safely removed and is redundant. For more info, please look at: https://github.com/kubevirt/kubevirt/blob/main/docs/deprecation.md
+kubevirt.kubevirt.io/kubevirt configured
+[root@master none]# kubectl edit kubevirt kubevirt -n kubevirt
+Edit cancelled, no changes made.
+# kubectl edit kubevirt kubevirt -n kubevirt 
+
+
+
+
+[root@master ~]# cat virtualmachinefeodra.yml
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: dev-dbaccess
+spec:
+  runStrategy: RerunOnFailure
+  template:
+    metadata:
+      labels:
+        app: dev-dbaccess
+        color: red
+    spec:
+      architecture: amd64
+      domain:
+        cpu:
+          cores: 1
+          sockets: 1
+          threads: 1
+        devices:
+          disks:
+          - name: dev-dbaccess
+            bootOrder: 1
+            disk:
+              bus: virtio
+          - name: cloudinitdisk
+            disk:
+              bus: virtio
+          interfaces:
+          - name: default
+            masquerade: {}
+        machine:
+          type: pc-q35-rhel8.4.0
+        resources:
+          requests:
+            memory: 2Gi
+      evictionStrategy: LiveMigrate
+      hostname: dev-dbaccess
+      networks:
+      - name: default
+        pod: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+      - name: dev-dbaccess
+        dataVolume:
+          name: fedora-dv
+      - name: cloudinitdisk
+        cloudInitNoCloud:
+          userData: |-
+            #cloud-config
+            user: developer
+            password: developer
+            chpasswd: { expire: False }
+[root@master ~]#
+
+
+
+[root@master ~]# mv rhel9-mariadb.qcow2 /var/www/html/
+[root@master ~]# ls /var/www/html/
+rhel9-mariadb.qcow2
+[root@master ~]# chmod 755 -R /var/www/html/
+[root@master ~]# virtctl image-upload dv fedora-dv --size=30Gi --image-path=/var/www/html/rhel9-mariadb.qcow2 --insecure  --uploadproxy-url=https://10.105.194.216:443
+PVC default/fedora-dv not found
+DataVolume default/fedora-dv created
+Waiting for PVC fedora-dv upload pod to be ready...
+Pod now ready
+Uploading data to https://10.105.194.216:443
+
+956.69 MiB / 956.69 MiB [---------------------------------------------------------------------------------------------------] 100.00% 38.02 MiB p/s 25s
+
+Uploading data completed successfully, waiting for processing to complete, you can hit ctrl-c without interrupting the progress
+Processing completed successfully
+Uploading /var/www/html/rhel9-mariadb.qcow2 completed successfully
+
+
+[root@master ~]# kubectl create -f virtualmachinefeodra.yml
+virtualmachine.kubevirt.io/dev-dbaccess created
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS    READY
+dev-dbaccess   7s    Running   True
+
+
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS      READY
+dev-dbaccess   26m   Migrating   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS      READY
+dev-dbaccess   26m   Migrating   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS    READY
+dev-dbaccess   26m   Running   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS    READY
+dev-dbaccess   26m   Running   True
+[root@master ~]# kubectl get vmi -o wide
+NAME           AGE   PHASE     IP              NODENAME              READY   LIVE-MIGRATABLE   PAUSED
+dev-dbaccess   26m   Running   172.16.71.214   worker2.example.com   True    True
+[root@master ~]#  virtctl migrate dev-dbaccess
+VM dev-dbaccess was scheduled to migrate
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS      READY
+dev-dbaccess   27m   Migrating   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS      READY
+dev-dbaccess   27m   Migrating   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS    READY
+dev-dbaccess   27m   Running   True
+[root@master ~]# kubectl get vm
+NAME           AGE   STATUS    READY
+dev-dbaccess   27m   Running   True
+[root@master ~]# kubectl get vm -o wide
+NAME           AGE   STATUS    READY
+dev-dbaccess   27m   Running   True
+[root@master ~]# kubectl get vmi -o wide
+NAME           AGE   PHASE     IP               NODENAME              READY   LIVE-MIGRATABLE   PAUSED
+dev-dbaccess   27m   Running   172.16.102.147   worker1.example.com   True    True
+
+
+
