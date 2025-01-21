@@ -9,3 +9,38 @@ kubeadm token create --certificate-key b1ceedd93b06aabd077848387de542c7321333d4f
 #kubeadm init phase upload-certs --upload-certs
 replace the certs with newly created cert and run the below command on other node 
 # kubeadm join 192.168.189.130:6443 --token r4liyx.rpgcw3qr81lbebh4 --discovery-token-ca-cert-hash sha256:be0ef3c07c8a7d655469e7765851f6803539ae539e44853f88c113cab9c1395f --control-plane --certificate-key acfc0487e2eeb9a888b91389529a0f4ccb1b4aecf1e4618f74f4f8626e8fcd76
+# How to check number of pods are scheduled per nodes
+[root@--masterbm-0(Active)]# kubectl get pods \-A \-o jsonpath='{range .items[?(@.spec.nodeName)]}{.spec.nodeName}{"\n"}{end}' | sort | uniq -c | sort -rn
+     90 --workerbm-3
+     75 --workerbm-9
+     68 --workerbm-8
+     68 --workerbm-4
+     64 --workerbm-6
+     52 --workerbm-10
+     44 --workerbm-5
+     42 --workerbm-2
+     41 --workerbm-7
+     30 --masterbm-1
+     29 --edgebm-6
+     28 --masterbm-0
+     28 --edgebm-5
+     28 --edgebm-14
+     27 --masterbm-2
+     27 --edgebm-4
+     27 --edgebm-2
+     27 --edgebm-15
+     26 --edgebm-16
+     26 --edgebm-12
+     25 --edgebm-9
+     25 --edgebm-13
+     25 --edgebm-10
+     24 --edgebm-8
+     24 --edgebm-11
+     23 --edgebm-7
+     23 --edgebm-3
+     10 --edgebm-17
+      9 --workerbm-1
+      9 --workerbm-0
+      9 --edgebm-1
+      9 --edgebm-0
+[root@--masterbm-0(Active)]#
