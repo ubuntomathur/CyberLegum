@@ -13,3 +13,5 @@ key:value
 This command will add two labels to the pod mypod: environment=production and app=nginx.
 4.kubectl describe pod mypod
 5.kubectl get pod mypod --show-labels
+6. kubectl get nodes workernode-5 --show-labels
+
