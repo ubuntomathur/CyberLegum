@@ -44,3 +44,42 @@ replace the certs with newly created cert and run the below command on other nod
       9 --edgebm-1
       9 --edgebm-0
 [root@--masterbm-0(Active)]#
+
+How to drain node
+sudo kubectl drain workerbm --ignore-daemonsets --force --delete-local-data --disable-eviction=true
+
+how to check taint nodes 
+[root@master0 (Active)]# kubectl get nodes -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.taints[*].key}{"\n"}{end}'
+edge0 is_edge node.kubernetes.io/unschedulable
+edge1 is_edge node.kubernetes.io/unschedulable
+edge10        is_edge
+edge11        is_edge
+edge12        is_edge
+edge13        is_edge
+edge14        is_edge
+edge15        is_edge
+edge16        is_edge
+edge17        is_edge
+edge2 is_edge
+edge3 is_edge
+edge4 is_edge
+edge5 is_edge
+edge6 is_edge
+edge7 is_edge
+edge8 is_edge
+edge9 is_edge
+master0       is_control
+master1       is_control
+master2       is_control
+worker0
+worker1       node.kubernetes.io/unschedulable
+worker10
+worker2
+worker3
+worker4
+worker5
+worker6
+worker7
+worker8
+worker9
+[root@master0 (Active)]#
