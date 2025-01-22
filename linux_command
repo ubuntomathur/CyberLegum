@@ -2,3 +2,20 @@ salt '*' cmd.run 'echo "ServerKeyBits 1024" | sudo tee -a /etc/ssh/sshd_config &
 salt '*' cmd.run "sudo chsh -s /sbin/nologin root"
 kubeadm token create --print-join-command --certificate-key $(sudo kubeadm init phase upload-certs --upload-certs | sed -n '3p')    ## join master node
 journalctl -u rabbitmq-server --no-pager
+if your Linux Terminal change into bash4.2 how to solve it 
+
+bash-4.2# cd /etc/skel/
+bash-4.2# ls -ll
+total 0
+bash-4.2# ls -la
+total 32
+drwxr-xr-x.   2 root root    76 Jan 24  2023 .
+drwxr-xr-x. 168 root root 12288 Jan 21 07:16 ..
+-rw-r--r--.   1 root root    18 Nov 24  2021 .bash_logout
+-rw-r--r--.   1 root root   193 Nov 24  2021 .bash_profile
+-rw-r--r--.   1 root root   231 Nov 24  2021 .bashrc
+-rw-r--r--.   1 root root   172 Apr  1  2020 .kshrc
+bash-4.2# sudo cp .bash_profile .bashrc ~/
+bash-4.2# exec bash
+[root@edge skel]# exit
+exit
