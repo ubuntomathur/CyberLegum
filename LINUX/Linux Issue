@@ -1,0 +1,25 @@
+Question-1://  Permission denied
+[root@master-0 ~ (Active)]# su vikasmathur
+bash: /home/vikasmathur/.bashrc: Permission denied
+bash-4.2$ exit
+exit
+[root@master-0 ~ (Active)]# ls -l /home/vikasmathur/.bashrc
+-rw-r--r--. 1 ankit operator 231 Nov 24  2021 /home/vikasmathur/.bashrc
+[root@master-0 ~ (Active)]# sudo chown vikasmathur:vikasmathur /home/vikasmathur/.bashrc
+[root@master-0 ~ (Active)]# sudo chmod 644 /home/vikasmathur/.bashrc
+[root@master-0 ~ (Active)]# ls -ld /home/vikasmathur
+drwxr-x---. 5 ankit operator 187 Sep 24 11:39 /home/vikasmathur
+[root@master-0 ~ (Active)]# sudo chmod 755 /home/vikasmathur
+[root@master-0 ~ (Active)]# sudo chown -R vikasmathur:vikasmathur /home/vikasmathur
+[root@master-0 ~ (Active)]# ls -ld /home/vikasmathur
+drwxr-xr-x. 5 vikasmathur vikasmathur 187 Sep 24 11:39 /home/vikasmathur
+[root@master-0 ~ (Active)]# su - vikasmathur
+Last login: Thu Feb 13 07:31:39 CET 2025 on pts/1
+[vikasmathur@master-0 ~ (Active)]$ exit
+logout
+
+Question-2://  password change 
+chage -M 300 admin
+chage -M 300 admin
+chage -M 300 admin
+chage -M 300 admin
