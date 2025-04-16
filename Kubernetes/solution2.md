@@ -13,7 +13,7 @@ How to find it
     - --service-cluster-ip-range=10.96.0.0/12
 [root@masterbm ~]#
 
-[root@opl-n-kat-ksdm-masterbm-0 cbis-admin (Active)]# kubectl get pods --all-namespaces -o=jsonpath='{range .items[*]}{.metadata.namespace}|{.metadata.name}|{.status.containerStatuses[*].lastState.terminated.reason}{"\n"}{end}' | grep whereabout
+[root@clusterinfo vikas (Active)]# kubectl get pods --all-namespaces -o=jsonpath='{range .items[*]}{.metadata.namespace}|{.metadata.name}|{.status.containerStatuses[*].lastState.terminated.reason}{"\n"}{end}' | grep whereabout
 kube-system|whereabouts-4fc45|
 kube-system|whereabouts-5r7ps|
 kube-system|whereabouts-5tr79|
