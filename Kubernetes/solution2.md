@@ -49,5 +49,7 @@ kube-system|whereabouts-zh2mz|
 
 
 
+Before dropping caches, it’s recommended to flush file system buffers to disk:
+sync && echo 3 > /proc/sys/vm/drop_caches
 
 ```
