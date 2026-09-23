@@ -1,304 +1,307 @@
-# 🟢 Lesson Learned: Recovering `prometheus-k8s-0` Local PV Mount Issue
+# 🟢 Lesson Learned — Prometheus `prometheus-k8s-0` / Local PV Recovery
 
-> **Incident Type:** OpenShift Monitoring / Prometheus Storage Recovery  
-> **Component:** `prometheus-k8s-0`  
-> **Storage Type:** Local PersistentVolume  
-> **Filesystem:** XFS  
-> **Recovery Theme:** Verify the real disk → verify filesystem → verify PV/PVC → correct local PV definition → preserve data → validate Prometheus
+> **Incident:** Prometheus pods stuck in `Init:0/1` because the local Prometheus PV was being mounted as **ext4** while the real disk filesystem was **XFS**.  
+> **Affected storage:** `ls-prometheus-data2` on `master1`; `ls-prometheus-data3` on `master2`.  
+> **Final result:** `prometheus-k8s-0` and `prometheus-k8s-1` both reached **6/6 Running**.
 
 ---
 
-## 🚨 1. Problem Statement
+## 🚨 1. Symptom
 
-The OpenShift Prometheus pod:
+Initial monitoring check showed:
 
-```text
-prometheus-k8s-0
+```bash
+oc get pods -n openshift-monitoring
 ```
 
-was not becoming healthy because its persistent storage could not be mounted correctly.
-
-The affected local PV was:
+Prometheus was stuck:
 
 ```text
-ls-prometheus-data2
+prometheus-k8s-0   0/6   Init:0/1
+prometheus-k8s-1   0/6   Init:0/1
 ```
 
-The underlying partition was:
+The affected pod was scheduled on:
 
 ```text
-/dev/sdd1
+master1.nokia-ncp-lab-cwla.nokialab.eu
 ```
-
-on the node where the local storage physically existed.
 
 ---
 
-## 🔴 2. First Check — Prometheus Pod
+## 🔎 2. First Diagnostic — Describe the Pod
 
-Start with the workload:
-
-```bash
-oc get pods -n openshift-monitoring | grep prometheus
-```
-
-Then inspect the affected pod:
-
-```bash
-oc get pod prometheus-k8s-0 -n openshift-monitoring -o wide
-```
-
-Also inspect events:
+Run:
 
 ```bash
 oc describe pod prometheus-k8s-0 -n openshift-monitoring
 ```
 
-### What to look for
+The important event was:
 
-Focus on:
+```text
+MountVolume.MountDevice failed for volume "ls-prometheus-data2"
 
-- `FailedMount`
-- `MountVolume`
-- PVC/PV references
-- node name
-- volume-related errors
+failed to mount device /dev/sdd1
+fstype: ext4
+
+mount -t ext4 -o defaults /dev/sdd1 ...
+```
+
+The kubelet then reported:
+
+```text
+wrong fs type, bad option, bad superblock on /dev/sdd1
+```
+
+### 🎯 Root cause identified
+
+Kubernetes was attempting:
+
+```text
+/dev/sdd1 → ext4
+```
+
+but the actual partition was XFS.
+
+This was a **filesystem-type mismatch**, not a Prometheus configuration problem.
 
 ---
 
-## 🟠 3. Check Prometheus PVC
+## 🔗 3. Trace the Storage Chain
 
-List PVCs:
+Follow the relationship:
+
+```text
+prometheus-k8s-0
+      ↓
+prometheus-k8s-db-prometheus-k8s-0
+      ↓
+ls-prometheus-data2
+      ↓
+/dev/sdd1
+      ↓
+XFS filesystem
+```
+
+Commands used:
 
 ```bash
 oc get pvc -n openshift-monitoring
-```
-
-Then inspect the Prometheus PVC:
-
-```bash
-oc describe pvc <PROMETHEUS-PVC> -n openshift-monitoring
-```
-
-The important relationship is:
-
-```text
-Prometheus Pod
-      ↓
-PersistentVolumeClaim
-      ↓
-PersistentVolume
-      ↓
-Local Disk / Partition
-```
-
----
-
-## 🟡 4. Identify the Bound PV
-
-List PVs:
-
-```bash
-oc get pv
-```
-
-Find the affected Prometheus PV:
-
-```bash
-oc get pv | grep prometheus
-```
-
-Affected PV:
-
-```text
-ls-prometheus-data2
-```
-
-Inspect the complete object:
-
-```bash
+oc describe pvc prometheus-k8s-db-prometheus-k8s-0 -n openshift-monitoring
 oc get pv ls-prometheus-data2 -o yaml
-```
-
-Also:
-
-```bash
 oc describe pv ls-prometheus-data2
 ```
 
 ---
 
-# 🔎 5. Check the Actual Disk on the Node
+## 🖥️ 4. Verify the Real Disk on master1
 
-Move to the node that owns the local disk.
-
-```bash
-ssh <PROMETHEUS-NODE>
-```
-
-Check block devices:
+SSH to the node:
 
 ```bash
-lsblk
+ssh -i id_ed25519 core@master1.nokia-ncp-lab-cwla.nokialab.eu
+sudo bash
 ```
 
-Then check filesystem information:
-
-```bash
-lsblk -f
-```
-
-And verify the partition directly:
+Verify filesystem:
 
 ```bash
 blkid /dev/sdd1
 ```
 
-### Important finding
-
-The partition was:
+The disk was identified as:
 
 ```text
-/dev/sdd1
-Filesystem: XFS
-PARTLABEL: var-lib-prometheus-data
+TYPE="xfs"
+PARTLABEL="var-lib-prometheus-data"
 ```
 
-This was a critical part of the diagnosis.
+Verify the persistent partition label:
+
+```bash
+ls -l /dev/disk/by-partlabel/
+readlink -f /dev/disk/by-partlabel/var-lib-prometheus-data
+```
+
+Result:
+
+```text
+/dev/disk/by-partlabel/var-lib-prometheus-data -> /dev/sdd1
+```
+
+This confirmed that the existing data partition was XFS and had a stable PARTLABEL path.
 
 ---
 
-# 🧠 6. Root-Cause Analysis
+# 🧠 5. Why the Mount Failed
 
-The original local PV definition referenced the device:
+The original PV configuration did not explicitly specify the real filesystem:
 
 ```yaml
 local:
   path: /dev/sdd1
 ```
 
-but the filesystem type was not explicitly defined.
+Because the filesystem type was not correctly represented in the PV, kubelet attempted the mount as:
 
-The physical partition was confirmed to be:
+```text
+fstype: ext4
+```
+
+The actual disk was:
 
 ```text
 XFS
 ```
 
-The partition also had a persistent label:
+Therefore:
 
 ```text
-var-lib-prometheus-data
+ext4 mount attempt
+      ↓
+XFS filesystem
+      ↓
+wrong fs type
+      ↓
+FailedMount
+      ↓
+Prometheus remains in Init
 ```
-
-So the recovery focused on making the PV definition match the **real storage characteristics** instead of changing or formatting the disk.
 
 ---
 
-# ✅ 7. Verify the Stable Device Path
+# 🛡️ 6. Data-Safety Rule
 
-Check the partition-label links:
+### ❌ DO NOT FORMAT THE PROMETHEUS DISK
 
-```bash
-ls -l /dev/disk/by-partlabel/
-```
-
-Confirm the expected label points to the real partition:
-
-```bash
-readlink -f /dev/disk/by-partlabel/var-lib-prometheus-data
-```
-
-Expected target:
-
-```text
-/dev/sdd1
-```
-
-This gives a more descriptive and persistent device path for the PV.
-
----
-
-# 🛡️ 8. Data-Safety Rule
-
-## ❌ DO NOT FORMAT THE EXISTING PARTITION
-
-Do **not** run:
+Never run:
 
 ```bash
 mkfs.xfs /dev/sdd1
 ```
 
-and do not run any other `mkfs` command against an existing Prometheus data partition.
+or another `mkfs` command on the existing data partition.
 
-The goal is:
-
-> **repair the Kubernetes storage definition without destroying the Prometheus data.**
+The objective was to repair the **Kubernetes PV definition**, not recreate the filesystem.
 
 ---
 
-# 🧰 9. Preserve the Underlying Data
+# 🧹 7. PV/PVC Cleanup
 
-Before changing the PV object, confirm:
+During recovery, the original PV/PVC objects became stuck in states such as:
 
-```bash
-lsblk -f
-blkid /dev/sdd1
+```text
+PV: Released
+PVC: Terminating
+PVC: Pending
 ```
 
-The objective is to make sure the original filesystem is still present.
+The original PVC was:
 
-The storage itself is not recreated.
+```text
+prometheus-k8s-db-prometheus-k8s-0
+```
+
+When the PVC remained stuck in `Terminating`, its protection finalizer was removed:
+
+```bash
+oc patch pvc prometheus-k8s-db-prometheus-k8s-0 \
+  -n openshift-monitoring \
+  --type=merge \
+  -p '{"metadata":{"finalizers":[]}}'
+```
+
+### ⚠️ Use finalizer removal only when the object is genuinely stuck
+
+This is a recovery action for a stuck object, not a normal first step.
 
 ---
 
-# ⚙️ 10. Stop Prometheus Before Storage Recovery
+# 🧩 8. Important Kubernetes Behavior — PV Source Is Immutable
 
-Scale the Prometheus StatefulSet down before rebuilding the local PV object:
+One recovery attempt tried to change the existing PV source with `oc apply`.
 
-```bash
-oc scale statefulset prometheus-k8s -n openshift-monitoring --replicas=0
+That failed with:
+
+```text
+spec.persistentvolumesource: Forbidden:
+spec.persistentvolumesource is immutable after creation
 ```
 
-Verify:
+The attempted difference included:
 
-```bash
-oc get pods -n openshift-monitoring | grep prometheus
+```text
+old path: /dev/sdd1
+new path: /dev/disk/by-partlabel/var-lib-prometheus-data
+new fsType: xfs
 ```
 
-This reduces the chance of the workload continually trying to mount the changing volume during recovery.
+### ✅ Lesson
+
+For a PV, the `spec.persistentVolumeSource` is immutable after creation.
+
+Therefore, changing:
+
+```text
+local.path
+fsType
+```
+
+is not an in-place edit.
+
+The recovery must recreate the PV object with the correct source definition.
 
 ---
 
-# 🧹 11. Remove the Incorrect PV Object
+# 🗑️ 9. Remove the Stale PV Object Carefully
 
-After confirming the underlying partition and data are intact, remove the Kubernetes PV object:
+The PV had protection finalizers and was not immediately disappearing.
+
+The recovery sequence included:
 
 ```bash
-oc delete pv ls-prometheus-data2
+oc get pv ls-prometheus-data2 -o yaml | grep -i finalizer
 ```
 
-### ⚠️ Important
+When appropriate, the PV protection finalizer was removed:
 
-This step is about removing the **Kubernetes PV object**, not formatting the physical disk.
+```bash
+oc patch pv ls-prometheus-data2 \
+  -p '{"metadata":{"finalizers":null}}' \
+  --type=merge
+```
 
-Do not delete or recreate:
+Then:
+
+```bash
+oc delete pv ls-prometheus-data2 --ignore-not-found --wait=false
+```
+
+### ⚠️ Critical distinction
+
+This deletes the **Kubernetes PV object**.
+
+It does **not** format or recreate:
 
 ```text
 /dev/sdd1
 ```
 
+The physical filesystem remained intact.
+
 ---
 
-# 📝 12. Recreate the Local PV Correctly
+# 📝 10. Correct Local PV Definition
 
-Create a manifest:
+The corrected definition uses:
 
-```bash
-vi ls-prometheus-data2.yaml
-```
+- the stable PARTLABEL path
+- `fsType: xfs`
+- `Retain` reclaim policy
+- node affinity to the node containing the physical disk
 
-Use the corrected local PV definition, adjusting the storage class and node name to your environment:
+### master1 / prometheus-k8s-0
 
 ```yaml
 apiVersion: v1
@@ -308,20 +311,14 @@ metadata:
 spec:
   capacity:
     storage: 456Gi
-
   volumeMode: Filesystem
-
   accessModes:
     - ReadWriteOnce
-
   persistentVolumeReclaimPolicy: Retain
-
   storageClassName: lsc-prometheus-data
-
   local:
     path: /dev/disk/by-partlabel/var-lib-prometheus-data
     fsType: xfs
-
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -329,73 +326,114 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - master1
+                - master1.nokia-ncp-lab-cwla.nokialab.eu
 ```
 
 ---
 
-# 🟢 13. What Was Corrected?
+# 🔁 11. Second Prometheus Replica — master2
 
-### ❌ Old-style reference
+The same storage issue existed for the second Prometheus replica on `master2`.
+
+First verify the physical partition:
+
+```bash
+ssh -i id_ed25519 core@master2.nokia-ncp-lab-cwla.nokialab.eu
+sudo bash
+blkid /dev/sdb1
+ls -l /dev/disk/by-partlabel/
+```
+
+The real disk was:
+
+```text
+/dev/sdb1
+TYPE="xfs"
+PARTLABEL="var-lib-prometheus-data"
+```
+
+The persistent label resolved to:
+
+```text
+/dev/disk/by-partlabel/var-lib-prometheus-data -> /dev/sdb1
+```
+
+The corrected PV was:
 
 ```yaml
-local:
-  path: /dev/sdd1
-```
-
-### ✅ Corrected local storage definition
-
-```yaml
-local:
-  path: /dev/disk/by-partlabel/var-lib-prometheus-data
-  fsType: xfs
-```
-
-### ✅ Node affinity
-
-The PV is explicitly associated with the node where the local disk exists.
-
-This is important because local storage is physically tied to a specific Kubernetes node.
-
----
-
-# 🚀 14. Apply the Rebuilt PV
-
-Apply the manifest:
-
-```bash
-oc apply -f ls-prometheus-data2.yaml
-```
-
-Check the PV:
-
-```bash
-oc get pv ls-prometheus-data2
-```
-
-Then:
-
-```bash
-oc describe pv ls-prometheus-data2
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ls-prometheus-data3
+spec:
+  capacity:
+    storage: 456Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: lsc-prometheus-data
+  local:
+    path: /dev/disk/by-partlabel/var-lib-prometheus-data
+    fsType: xfs
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - master2.nokia-ncp-lab-cwla.nokialab.eu
 ```
 
 ---
 
-# 🔗 15. Verify the PVC Rebind
+# 🚀 12. Apply the Corrected PV
 
-Check all monitoring PVCs:
-
-```bash
-oc get pvc -n openshift-monitoring
-```
-
-Inspect the Prometheus PVC:
+For the corrected manifest:
 
 ```bash
-oc describe pvc <PROMETHEUS-PVC> -n openshift-monitoring
+oc apply -f ls-prometheus-data3.yaml
 ```
 
-Target state:
+Verify:
+
+```bash
+oc get pv ls-prometheus-data3 \
+  -o custom-columns='NAME:.metadata.name,STATUS:.status.phase,CAPACITY:.spec.capacity.storage,PATH:.spec.local.path,FSTYPE:.spec.local.fsType,NODE:.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]'
+```
+
+Successful state:
+
+```text
+ls-prometheus-data3   Bound   456Gi   /dev/disk/by-partlabel/var-lib-prometheus-data   xfs   master2...
+```
+
+---
+
+# 🔗 13. Verify PVC Binding
+
+For the second replica:
+
+```bash
+oc get pvc prometheus-k8s-db-prometheus-k8s-1 -n openshift-monitoring -w
+```
+
+Successful state:
+
+```text
+STATUS   Bound
+VOLUME   ls-prometheus-data3
+CAPACITY 456Gi
+```
+
+For the first replica, verify:
+
+```bash
+oc get pvc prometheus-k8s-db-prometheus-k8s-0 -n openshift-monitoring
+```
+
+The important condition is:
 
 ```text
 STATUS: Bound
@@ -403,233 +441,171 @@ STATUS: Bound
 
 ---
 
-# ▶️ 16. Start Prometheus Again
+# ✅ 14. Final Prometheus Validation
 
-Scale the StatefulSet back:
-
-```bash
-oc scale statefulset prometheus-k8s -n openshift-monitoring --replicas=2
-```
-
-Watch the pod:
+Run:
 
 ```bash
-oc get pods -n openshift-monitoring -w
+oc get pods -n openshift-monitoring | grep prometheus-k8s
 ```
 
----
-
-# ✅ 17. Final Prometheus Validation
-
-Check:
-
-```bash
-oc get pods -n openshift-monitoring | grep prometheus
-```
-
-Then specifically:
-
-```bash
-oc get pod prometheus-k8s-0 -n openshift-monitoring -o wide
-```
-
-The successful final state was:
+Final successful result from the incident:
 
 ```text
-prometheus-k8s-0    6/6    Running
+prometheus-k8s-0   6/6   Running   0
+prometheus-k8s-1   6/6   Running   0
 ```
 
-Also verify pod events:
+Also:
 
 ```bash
-oc describe pod prometheus-k8s-0 -n openshift-monitoring
+oc get sts prometheus-k8s -n openshift-monitoring
 ```
 
-There should be no continuing volume mount failures.
+Final StatefulSet state:
+
+```text
+prometheus-k8s   2/2
+```
 
 ---
 
-# 🔬 18. Final Disk Verification
+# 🟣 15. What Actually Solved the Issue?
 
-On the node:
+The key fix was:
+
+```text
+❌ PV assumed/used ext4
+        ↓
+🔎 Verify physical disk
+        ↓
+✅ Actual filesystem = XFS
+        ↓
+✅ Find persistent PARTLABEL
+        ↓
+✅ Recreate PV with:
+       path = /dev/disk/by-partlabel/var-lib-prometheus-data
+       fsType = xfs
+       nodeAffinity = correct node
+        ↓
+✅ Bind PVC
+        ↓
+✅ Prometheus pods Running
+```
+
+---
+
+# 💡 16. Lessons Learned
+
+### 1. Always start with pod Events
 
 ```bash
+oc describe pod <pod> -n openshift-monitoring
+```
+
+The kubelet event exposed the real problem: the mount was attempted as `ext4`.
+
+### 2. Never trust the PV definition alone
+
+Verify the actual node:
+
+```bash
+blkid <device>
 lsblk -f
 ```
 
-Then:
+### 3. Local PVs are physically node-bound
 
-```bash
-blkid /dev/sdd1
-```
+The node affinity must match the node that owns the disk.
 
-Confirm:
+### 4. PV source fields are immutable
 
-```text
-TYPE="xfs"
-PARTLABEL="var-lib-prometheus-data"
-```
+Do not try to change `local.path` or `fsType` on an existing PV with `oc apply`.
 
-Also verify:
+### 5. Preserve the data
 
-```bash
-readlink -f /dev/disk/by-partlabel/var-lib-prometheus-data
-```
+Delete/recreate the Kubernetes object when required, but do not format the underlying Prometheus filesystem.
 
-Expected:
+### 6. Validate the complete chain
 
 ```text
-/dev/sdd1
+Pod
+ ↓
+PVC
+ ↓
+PV
+ ↓
+Node
+ ↓
+Physical partition
+ ↓
+Filesystem
+ ↓
+Mount
+ ↓
+Prometheus
 ```
 
 ---
 
-# 🧭 19. Complete Troubleshooting Flow
-
-```text
-🔴 prometheus-k8s-0 unhealthy
-             │
-             ▼
-🔎 Check Pod Events
-             │
-             ▼
-🔎 Check Prometheus PVC
-             │
-             ▼
-🔎 Identify PV: ls-prometheus-data2
-             │
-             ▼
-🖥️ Inspect node disk
-             │
-             ▼
-🔎 lsblk -f / blkid /dev/sdd1
-             │
-             ▼
-📌 Confirm filesystem = XFS
-             │
-             ▼
-📌 Confirm PARTLABEL
-             │
-             ▼
-🛑 Scale Prometheus down
-             │
-             ▼
-🧹 Remove incorrect PV object
-             │
-             ▼
-📝 Recreate PV
-   ├── stable PARTLABEL path
-   ├── fsType: xfs
-   ├── Retain policy
-   └── nodeAffinity
-             │
-             ▼
-✅ PVC Bound
-             │
-             ▼
-▶️ Scale Prometheus up
-             │
-             ▼
-🎯 prometheus-k8s-0 = 6/6 Running
-```
-
----
-
-# 💡 20. Lesson Learned
-
-### Lesson 1 — Start from the workload
-
-Do not immediately modify the PV.
-
-First establish:
-
-```text
-Pod → PVC → PV → Node → Disk
-```
-
-### Lesson 2 — Always verify the physical filesystem
-
-Use:
+# 🧪 17. Troubleshooting Cheat Sheet
 
 ```bash
-lsblk -f
-blkid /dev/sdd1
-```
+# Prometheus pods
+oc get pods -n openshift-monitoring | grep prometheus-k8s
 
-The Kubernetes object may not tell the complete storage story.
-
-### Lesson 3 — Local storage is node-specific
-
-A local PV must be scheduled with awareness of the node holding the physical disk.
-
-### Lesson 4 — Do not destroy data while fixing metadata
-
-The recovery objective was to repair the Kubernetes storage definition while preserving the existing XFS filesystem.
-
-### Lesson 5 — Validate all layers after recovery
-
-Check:
-
-```text
-PV → PVC → Pod → Mount → Filesystem → Application
-```
-
----
-
-# 📋 21. Useful Command Cheat Sheet
-
-```bash
-# Pod
-oc get pods -n openshift-monitoring | grep prometheus
-
-# Pod details
+# Pod events
 oc describe pod prometheus-k8s-0 -n openshift-monitoring
 
-# PVC
+# PVCs
 oc get pvc -n openshift-monitoring
 
-# PV
-oc get pv
+# PV details
+oc get pv ls-prometheus-data2 -o yaml
 oc describe pv ls-prometheus-data2
 
-# Node/Disk
-lsblk -f
+# Physical disk
 blkid /dev/sdd1
+lsblk -f
 
-# Partition-label path
+# Stable device path
 ls -l /dev/disk/by-partlabel/
 readlink -f /dev/disk/by-partlabel/var-lib-prometheus-data
 
-# Stop Prometheus
-oc scale statefulset prometheus-k8s -n openshift-monitoring --replicas=0
+# Stuck PVC finalizer — only when required
+oc patch pvc prometheus-k8s-db-prometheus-k8s-0 \
+  -n openshift-monitoring \
+  --type=merge \
+  -p '{"metadata":{"finalizers":[]}}'
 
-# Recreate PV
-oc apply -f ls-prometheus-data2.yaml
-
-# Start Prometheus
-oc scale statefulset prometheus-k8s -n openshift-monitoring --replicas=2
+# PV finalizer — only when required for a stuck deletion
+oc patch pv ls-prometheus-data2 \
+  -p '{"metadata":{"finalizers":null}}' \
+  --type=merge
 
 # Final validation
-oc get pods -n openshift-monitoring | grep prometheus
+oc get pv | grep prometheus
+oc get pvc -n openshift-monitoring | grep prometheus
+oc get pods -n openshift-monitoring | grep prometheus-k8s
+oc get sts prometheus-k8s -n openshift-monitoring
 ```
 
 ---
 
-# 🏁 Resolution Summary
+# 🏁 Final Outcome
 
-| Area | Before | Recovery |
+| Layer | Before | After |
 |---|---|---|
-| Prometheus | ❌ `prometheus-k8s-0` unhealthy | ✅ Running |
-| PV | ❌ Incorrect local PV definition | ✅ Recreated |
-| Disk | ✅ Existing data disk | ✅ Preserved |
-| Filesystem | XFS | ✅ Explicitly configured |
-| Local path | Device path | ✅ PARTLABEL path |
-| Node placement | Local disk dependency | ✅ Node affinity |
-| PVC | Storage mount problem | ✅ Bound |
-| Final pod | ❌ Not healthy | ✅ `6/6 Running` |
+| Pod | ❌ `Init:0/1` | ✅ `6/6 Running` |
+| Mount | ❌ ext4 against XFS | ✅ XFS |
+| PV source | ❌ incomplete/wrong FS handling | ✅ PARTLABEL + `fsType: xfs` |
+| PVC | ❌ Pending/Terminating during recovery | ✅ Bound |
+| Local node mapping | ⚠️ required verification | ✅ explicit node affinity |
+| Data partition | ✅ existing | ✅ preserved |
+| StatefulSet | ❌ not ready | ✅ `2/2` |
 
 ---
 
 ## 🏷️ Tags
 
-`OpenShift` `Kubernetes` `Prometheus` `LocalPV` `PersistentVolume` `PersistentVolumeClaim` `XFS` `StorageTroubleshooting` `LinuxStorage` `DevOps` `SRE` `LessonLearned`
+`OpenShift` `Kubernetes` `Prometheus` `LocalPV` `PV` `PVC` `XFS` `StorageTroubleshooting` `SRE` `DevOps` `LessonLearned`
